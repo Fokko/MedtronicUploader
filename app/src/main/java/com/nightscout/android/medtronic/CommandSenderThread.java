@@ -7,6 +7,8 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
+import ch.qos.logback.classic.Logger;
+
 import com.nightscout.android.USB.HexDump;
 import com.physicaloid.lib.Physicaloid;
 
@@ -50,7 +52,6 @@ public class CommandSenderThread implements Runnable {
      * Constructor
      *
      * @param commandList,  array of commands to send in order.
-     * @param mClient,      communication with the UI.
      * @param reader,       MedtronicReader instance.
      * @param idPump
      * @param mSerialDevice

@@ -14,7 +14,6 @@ import android.util.Log;
 import android.widget.RemoteViews;
 
 import com.nightscout.android.R;
-import com.nightscout.android.medtronic.MedtronicActivity;
 import com.nightscout.android.medtronic.MedtronicConstants;
 import com.nightscout.android.upload.MedtronicSensorRecord;
 import com.nightscout.android.upload.Record;
@@ -23,35 +22,34 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 
-public class CGMWidgetUpdater extends Service {
-
-    public static int UPDATE_FREQUENCY_SEC = 10;
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        buildUpdate();
-
-        return super.onStartCommand(intent, flags, startId);
-    }
-
-    private void buildUpdate() {
-
-        RemoteViews views = null;
-        KeyguardManager myKM = (KeyguardManager) getBaseContext().getSystemService(Context.KEYGUARD_SERVICE);
-        if (myKM.inKeyguardRestrictedInputMode()) {
-            views = new RemoteViews(getPackageName(), R.layout.widget_lock);
-        } else {
-            views = new RemoteViews(getPackageName(), R.layout.widget_main);
-            Intent intent = new Intent(getBaseContext(), MedtronicActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(getBaseContext(), 7, intent, 0);
-            views.setOnClickPendingIntent(R.id.imageButton1, pendingIntent);
-        }
-        Record auxRecord = CGMWidgetUpdater.this.loadClassFile(new File(getBaseContext().getFilesDir(), "save.bin"));
+public class CGMWidgetUpdater extends Service{
+	
+	public static int UPDATE_FREQUENCY_SEC = 10;
+	@Override  
+    public void onCreate()  
+    {  
+        super.onCreate();  
+    }  
+  
+    @Override  
+    public int onStartCommand(Intent intent, int flags, int startId)  
+    {  
+        buildUpdate();  
+  
+        return super.onStartCommand(intent, flags, startId);  
+    }  
+  
+    private void buildUpdate()  
+    {  
+    	
+    	RemoteViews views = null;
+    	KeyguardManager myKM = (KeyguardManager) getBaseContext().getSystemService(Context.KEYGUARD_SERVICE);
+    	if( myKM.inKeyguardRestrictedInputMode()) {
+    		views = new RemoteViews(getPackageName(), R.layout.widget_lock);
+    	} else {
+    		views = new RemoteViews(getPackageName(), R.layout.widget_main);
+    	}
+    	Record auxRecord =  CGMWidgetUpdater.this.loadClassFile(new File(getBaseContext().getFilesDir(), "save.bin"));
         updateValues(auxRecord, views);
 
         // Push update for this widget to the home screen  

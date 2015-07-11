@@ -10,6 +10,7 @@ import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import ch.qos.logback.classic.Logger;
 import com.nightscout.android.USB.HexDump;
 import com.nightscout.android.upload.GlucometerRecord;
 import com.nightscout.android.upload.MedtronicPumpRecord;
@@ -1623,6 +1624,7 @@ public class MedtronicReader {
 				hGetter.wThread.postCommandBytes[2] = lastHistoricPage[1];
 				hGetter.wThread.postCommandBytes[3] = lastHistoricPage[2];
 				hGetter.wThread.postCommandBytes[4] = lastHistoricPage[3];*/
+
                 hGetter.isWaitingNextLine = true;
                 hGetter.currentLine = -1;
                 hGetter.historicPage.clear();
@@ -2380,7 +2382,6 @@ public class MedtronicReader {
      *
      * @param record    , current sensor reading
      * @param initTime  , time of the first (most actual) reading in this row
-     * @param substract , index of this reading respectively the initTime reading.
      *                  Each increment subtracts 5 minutes to "initTime"
      */
     private void calculateDate(Record record, Date initTime, int subtract) {
@@ -2394,6 +2395,7 @@ public class MedtronicReader {
         }
 
         long timeAdd = milliseconds;
+
 
 		/*
 		 * TimeZone tz = TimeZone.getDefault();

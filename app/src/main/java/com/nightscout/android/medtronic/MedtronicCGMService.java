@@ -1207,6 +1207,7 @@ public class MedtronicCGMService extends Service implements
     private boolean isOnline() {
         ConnectivityManager connectivity = (ConnectivityManager) getBaseContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         boolean isOnline = false;
+
         if (connectivity != null) {
             NetworkInfo[] info = connectivity.getAllNetworkInfo();
             if (info != null) {

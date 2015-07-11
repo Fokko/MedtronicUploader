@@ -10,6 +10,8 @@ import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import ch.qos.logback.classic.Logger;
+
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -17,7 +19,6 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientOptions.Builder;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
@@ -47,8 +48,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-import ch.qos.logback.classic.Logger;
-
 public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
     private static final String TAG = "DexcomUploadHelper";
@@ -56,6 +55,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     private static final int SOCKET_TIMEOUT = 60 * 1000;
     private static final int CONNECTION_TIMEOUT = 30 * 1000;
     public static Boolean isModifyingRecords = false;
+
+
     public String dbURI = null;
     public String collectionName = null;
     public String dsCollectionName = null;
@@ -125,8 +126,9 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
         }
     }
 
+    
     public UploadHelper(Context context, ArrayList<Messenger> mClients) {
-        this(context);
+    	this(context);
         this.mClients = mClients;
     }
 
@@ -535,6 +537,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
             json.put("batteryVoltage", pumpRecord.batteryVoltage);
             json.put("isWarmingUp", pumpRecord.isWarmingUp);
         }
+
     }
 
     private void doMongoUpload(SharedPreferences prefs, Record... records) {
@@ -545,7 +548,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
             BasicDBObject testData = new BasicDBObject();
             try {
                 // connect to db
-                Builder b = MongoClientOptions.builder();
+                MongoClientOptions.Builder b = MongoClientOptions.builder();
                 b.heartbeatConnectTimeout(60000);
                 b.heartbeatSocketTimeout(60000);
                 b.maxWaitTime(60000);
@@ -799,6 +802,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                                 recordsNotUploadedList.add(new JSONObject(testData.toMap()));
                             }
                         }
+
                     }
                 }
                 Log.e(TAG, "Unable to upload data to mongo", e);
@@ -844,6 +848,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                         dsCollection.insert(devicestatus, WriteConcern.UNACKNOWLEDGED);
                     }
                 }
+
             } catch (Exception e) {
                 if (cursor != null) {
                     cursor.close();

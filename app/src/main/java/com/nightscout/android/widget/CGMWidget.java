@@ -87,6 +87,7 @@ public class CGMWidget extends AppWidgetProvider {
 
     public Record loadClassFile(File f) {
         ObjectInputStream ois = null;
+
         try {
             ois = new ObjectInputStream(new FileInputStream(f));
             Object o = ois.readObject();
