@@ -15,8 +15,7 @@ import android.util.Log;
 import android.widget.RemoteViews;
 
 import com.nightscout.android.R;
-import com.nightscout.android.dexcom.DexcomG4Activity;
-import com.nightscout.android.dexcom.EGVRecord;
+import com.nightscout.android.utils.EGVRecord;
 import com.nightscout.android.medtronic.MedtronicConstants;
 import com.nightscout.android.upload.MedtronicSensorRecord;
 import com.nightscout.android.upload.Record;
@@ -30,14 +29,9 @@ public class CGMWidget extends AppWidgetProvider {
 	        for (int i=0; i<N; i++) {
 	            int appWidgetId = appWidgetIds[i];
 
-	            // Create an Intent to launch ExampleActivity
-	            Intent intent = new Intent(context, DexcomG4Activity.class);
-	            PendingIntent pendingIntent = PendingIntent.getActivity(context, 7, intent, 0);
-
 	            // Get the layout for the App Widget and attach an on-click listener
 	            // to the button
 	            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_main);
-	            views.setOnClickPendingIntent(R.id.imageButton1, pendingIntent);
 	            Record auxRecord =  CGMWidget.this.loadClassFile(new File(context.getFilesDir(), "save.bin"));
 	            if (auxRecord instanceof MedtronicSensorRecord){
 	    	    	MedtronicSensorRecord record = (MedtronicSensorRecord) auxRecord;

@@ -7,7 +7,7 @@ import java.util.HashMap;
 import android.os.Handler;
 import android.os.Messenger;
 
-import com.nightscout.android.dexcom.USB.HexDump;
+import com.nightscout.android.USB.HexDump;
 import com.physicaloid.lib.Physicaloid;
 
 public class HistoricGetterThread extends CommandSenderThread {

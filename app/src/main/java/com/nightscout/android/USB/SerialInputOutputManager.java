@@ -18,7 +18,7 @@
  * Project home page: http://code.google.com/p/usb-serial-for-android/
  */
 
-package com.nightscout.android.dexcom.USB;
+package com.nightscout.android.USB;
 
 import android.util.Log;
 

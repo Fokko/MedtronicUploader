@@ -46,10 +46,8 @@ import com.mongodb.MongoClientOptions.Builder;
 import com.mongodb.MongoClientURI;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
-import com.nightscout.android.dexcom.DexcomG4Activity;
-import com.nightscout.android.dexcom.USB.HexDump;
-import com.nightscout.android.dexcom.USB.USBPower;
-import com.nightscout.android.eula.Eula;
+import com.nightscout.android.USB.HexDump;
+import com.nightscout.android.USB.USBPower;
 import com.nightscout.android.upload.Record;
 import com.nightscout.android.upload.UploadHelper;
 import com.physicaloid.lib.Physicaloid;
@@ -937,7 +935,6 @@ public class MedtronicCGMService extends Service implements
 						if ((recordsNotUploaded.length() > 0 || recordsNotUploadedJson.length() > 0) && !isDestroying) {
 							log.info("to upload old records");
 							uploader = new UploadHelper(getApplicationContext(),
-									DexcomG4Activity.MEDTRONIC_CGM,
 									mClients);
 							if (!isDBInitialized){
 								isDBInitialized = initializeDB();
@@ -1042,7 +1039,6 @@ public class MedtronicCGMService extends Service implements
 					if (params.length > 0) {
 						synchronized (mHandlerReloadLost) {
 							uploader = new UploadHelper(getApplicationContext(),
-									DexcomG4Activity.MEDTRONIC_CGM,
 									mClients);
 							if (!isDBInitialized){
 								isDBInitialized = initializeDB();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.nightscout.android.dexcom.USB;
+package com.nightscout.android.USB;
 
 /**
  * Clone of Android's HexDump class, for use in debugging. Cosmetic changes

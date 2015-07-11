@@ -34,7 +34,6 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import ch.qos.logback.classic.Logger;
-import ch.qos.logback.core.status.WarnStatus;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -47,8 +46,7 @@ import com.mongodb.MongoClientOptions.Builder;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
-import com.nightscout.android.dexcom.DexcomG4Activity;
-import com.nightscout.android.dexcom.EGVRecord;
+import com.nightscout.android.utils.EGVRecord;
 import com.nightscout.android.medtronic.MedtronicConstants;
 import com.nightscout.android.medtronic.MedtronicReader;
 
@@ -62,7 +60,6 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     private static final int CONNECTION_TIMEOUT = 30 * 1000;
 
     Context context;
-    private int cgmSelected = DexcomG4Activity.DEXCOMG4;
     private ArrayList<Messenger> mClients;
     private List<JSONObject> recordsNotUploadedList = new ArrayList<JSONObject>();
     private List<JSONObject> recordsNotUploadedListJson = new ArrayList<JSONObject>();
@@ -78,13 +75,9 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     public DBCollection dsCollection = null;
     public static Boolean isModifyingRecords = false;
     private MongoClient client = null;
-    public UploadHelper(Context context) {
-        this(context, DexcomG4Activity.DEXCOMG4);
-    }
     
-    public UploadHelper(Context context, int cgmSelected) {
+    public UploadHelper(Context context) {
         this.context = context;
-        this.cgmSelected = cgmSelected; 
         this.mClients = null;
         settings = context.getSharedPreferences(MedtronicConstants.PREFS_NAME, 0);
         synchronized (isModifyingRecords) {
@@ -134,8 +127,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
         }
     }
     
-    public UploadHelper(Context context, int cgmSelected, ArrayList<Messenger> mClients) {
-    	this(context, cgmSelected);
+    public UploadHelper(Context context, ArrayList<Messenger> mClients) {
+    	this(context);
         this.mClients = mClients;
     }
     /**
@@ -171,12 +164,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
      * @return constant String to identify the selected Device
      */
     private String getSelectedDeviceName(){
-    	switch (cgmSelected){
-	    	case DexcomG4Activity.MEDTRONIC_CGM:
-	    		return "Medtronic_CGM";
-	    	default:
-	    		return "dexcom";
-    	}
+        return "Medtronic_CGM";
     }
     /**
      * doInBackground
@@ -473,7 +461,6 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
         log.info("devicestatusURL: " + devicestatusURL);
 
         JSONObject json = new JSONObject();
-        json.put("uploaderBattery", DexcomG4Activity.batLevel);
         String jsonString = json.toString();
 
         HttpPost post = new HttpPost(devicestatusURL);
@@ -497,7 +484,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     		json.put("device", getSelectedDeviceName());
             json.put("sgv", Integer.parseInt(record.bGValue));
             json.put("direction", record.trend);
-            if (cgmSelected == DexcomG4Activity.MEDTRONIC_CGM && (oRecord instanceof MedtronicSensorRecord)){
+            if (oRecord instanceof MedtronicSensorRecord){
             	json.put("isig", ((MedtronicSensorRecord)record).isig);
             	json.put("calibrationFactor", ((MedtronicSensorRecord)record).calibrationFactor);
             	json.put("calibrationStatus", ((MedtronicSensorRecord)record).calibrationStatus);
@@ -530,7 +517,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     		json.put("device", getSelectedDeviceName());
             json.put("sgv", Integer.parseInt(record.bGValue));
             json.put("direction", record.trend);
-            if (cgmSelected == DexcomG4Activity.MEDTRONIC_CGM && (oRecord instanceof MedtronicSensorRecord)){
+            if (oRecord instanceof MedtronicSensorRecord){
             	json.put("isig", ((MedtronicSensorRecord)record).isig);
             	json.put("calibrationFactor", ((MedtronicSensorRecord)record).calibrationFactor);
             	json.put("calibrationStatus", ((MedtronicSensorRecord)record).calibrationStatus);
@@ -663,7 +650,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 		                    testData.put("type", "sgv");
 		                    testData.put("direction", record.trend);
 		                    typeSaved = 0;
-		                    if (cgmSelected == DexcomG4Activity.MEDTRONIC_CGM && (oRecord instanceof MedtronicSensorRecord)){
+		                    if (oRecord instanceof MedtronicSensorRecord){
 		                    	typeSaved = 1;
 		                    	testData.put("isig", ((MedtronicSensorRecord)record).isig);
 		                    	testData.put("calibrationFactor", ((MedtronicSensorRecord)record).calibrationFactor);
@@ -794,7 +781,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 		                    testData.put("sgv", record.bGValue);
 		                    testData.put("direction", record.trend);
 		                    typeSaved = 0;
-		                    if (cgmSelected == DexcomG4Activity.MEDTRONIC_CGM && (oRecord instanceof MedtronicSensorRecord)){
+		                    if (oRecord instanceof MedtronicSensorRecord){
 		                    	typeSaved = 1;
 		                    	testData.put("isig", ((MedtronicSensorRecord)record).isig);
 		                    	testData.put("calibrationFactor", ((MedtronicSensorRecord)record).calibrationFactor);
@@ -851,7 +838,6 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 	                }
 	                if (update){
 		                BasicDBObject devicestatus = new BasicDBObject();
-		                devicestatus.put("uploaderBattery", DexcomG4Activity.batLevel);
 		                devicestatus.put("created_at", new Date());
 		                log.debug("Update Battery");
 		                dsCollection.insert(devicestatus, WriteConcern.UNACKNOWLEDGED);

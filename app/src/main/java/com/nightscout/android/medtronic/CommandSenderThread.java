@@ -14,7 +14,7 @@ import android.util.Log;
 
 import ch.qos.logback.classic.Logger;
 
-import com.nightscout.android.dexcom.USB.HexDump;
+import com.nightscout.android.USB.HexDump;
 import com.physicaloid.lib.Physicaloid;
 
 

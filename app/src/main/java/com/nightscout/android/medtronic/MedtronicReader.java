@@ -28,7 +28,7 @@ import android.util.Log;
 
 import ch.qos.logback.classic.Logger;
 
-import com.nightscout.android.dexcom.USB.HexDump;
+import com.nightscout.android.USB.HexDump;
 import com.nightscout.android.upload.GlucometerRecord;
 import com.nightscout.android.upload.MedtronicPumpRecord;
 import com.nightscout.android.upload.MedtronicSensorRecord;
@@ -2021,7 +2021,7 @@ public class MedtronicReader {
 					|| HexDump.unsignedByte(calculateNextSensorSortNameFrom(1,
 							expectedSensorSortNumber)) == HexDump
 							.unsignedByte(readData[firstMeasureByte + 3])) {
-				// sendMessageToUI("Está dentro de lo esperado ", false);
+				// sendMessageToUI("Estï¿½ dentro de lo esperado ", false);
 				Log.i("Medtronic", "Expected sensor number received!!");
 				log.info("SENSOR MEASURE, Expected sensor measure received!!");
 				lastElementsAdded = 0;

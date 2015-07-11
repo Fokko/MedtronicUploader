@@ -1,6 +1,6 @@
 package com.nightscout.android.upload;
 
-import com.nightscout.android.dexcom.EGVRecord;
+import com.nightscout.android.utils.EGVRecord;
 import com.nightscout.android.medtronic.MedtronicConstants;
 
 public class MedtronicSensorRecord extends EGVRecord {

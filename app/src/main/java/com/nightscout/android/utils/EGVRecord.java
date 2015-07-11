@@ -1,4 +1,4 @@
-package com.nightscout.android.dexcom;
+package com.nightscout.android.utils;
 
 import java.io.Serializable;
 
