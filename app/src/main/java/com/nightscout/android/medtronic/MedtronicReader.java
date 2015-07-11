@@ -1527,7 +1527,7 @@ public class MedtronicReader {
                 glucoseVal = (HexDump.unsignedByte(invertedPage[i])) * 2;
                 log.info("    - Glucose:" + glucoseVal + " mg/dl (" + HexDump.toHexString(invertedPage[i]) + ")");
                 glucoseDataRead = true;
-                datalog.numEntries++;
+                ++datalog.numEntries;
                 datalog.entryType[datalog.numEntries] = 0x00;
                 datalog.glucose[datalog.numEntries] = glucoseVal;
             }

@@ -21,7 +21,6 @@ import com.mongodb.MongoClientOptions.Builder;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
-import com.nightscout.android.dexcom.EGVRecord;
 import com.nightscout.android.medtronic.MedtronicActivity;
 import com.nightscout.android.medtronic.MedtronicConstants;
 import com.nightscout.android.medtronic.MedtronicReader;
@@ -482,18 +481,17 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
         if (oRecord instanceof GlucometerRecord) {
             json.put("gdValue", ((GlucometerRecord) oRecord).numGlucometerValue);
-        } else if (oRecord instanceof EGVRecord) {
-            EGVRecord record = (EGVRecord) oRecord;
+        } else if (oRecord instanceof MedtronicSensorRecord) {
+            MedtronicSensorRecord record = (MedtronicSensorRecord) oRecord;
             json.put("device", getSelectedDeviceName());
             json.put("sgv", Integer.parseInt(record.bGValue));
             json.put("direction", record.trend);
-            if (oRecord instanceof MedtronicSensorRecord) {
-                json.put("isig", ((MedtronicSensorRecord) record).isig);
-                json.put("calibrationFactor", ((MedtronicSensorRecord) record).calibrationFactor);
-                json.put("calibrationStatus", ((MedtronicSensorRecord) record).calibrationStatus);
-                json.put("unfilteredGlucose", ((MedtronicSensorRecord) record).unfilteredGlucose);
-                json.put("isCalibrating", ((MedtronicSensorRecord) record).isCalibrating);
-            }
+            json.put("isig", record.isig);
+            json.put("calibrationFactor", record.calibrationFactor);
+            json.put("calibrationStatus",  record.calibrationStatus);
+            json.put("unfilteredGlucose", record.unfilteredGlucose);
+            json.put("isCalibrating", record.isCalibrating);
+
         } else if (oRecord instanceof MedtronicPumpRecord) {
             MedtronicPumpRecord pumpRecord = (MedtronicPumpRecord) oRecord;
             json.put("name", pumpRecord.getDeviceName());
@@ -515,18 +513,16 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
         if (oRecord instanceof GlucometerRecord) {
             json.put("gdValue", ((GlucometerRecord) oRecord).numGlucometerValue);
-        } else if (oRecord instanceof EGVRecord) {
-            EGVRecord record = (EGVRecord) oRecord;
+        } else if (oRecord instanceof MedtronicSensorRecord) {
+            MedtronicSensorRecord record = (MedtronicSensorRecord) oRecord;
             json.put("device", getSelectedDeviceName());
             json.put("sgv", Integer.parseInt(record.bGValue));
             json.put("direction", record.trend);
-            if (oRecord instanceof MedtronicSensorRecord) {
-                json.put("isig", ((MedtronicSensorRecord) record).isig);
-                json.put("calibrationFactor", ((MedtronicSensorRecord) record).calibrationFactor);
-                json.put("calibrationStatus", ((MedtronicSensorRecord) record).calibrationStatus);
-                json.put("unfilteredGlucose", ((MedtronicSensorRecord) record).unfilteredGlucose);
-                json.put("isCalibrating", ((MedtronicSensorRecord) record).isCalibrating);
-            }
+            json.put("isig", record.isig);
+            json.put("calibrationFactor", record.calibrationFactor);
+            json.put("calibrationStatus",  record.calibrationStatus);
+            json.put("unfilteredGlucose", record.unfilteredGlucose);
+            json.put("isCalibrating", record.isCalibrating);
         } else if (oRecord instanceof MedtronicPumpRecord) {
             MedtronicPumpRecord pumpRecord = (MedtronicPumpRecord) oRecord;
             json.put("name", pumpRecord.getDeviceName());
@@ -645,8 +641,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                         testData.put("date", date.getTime());
                         testData.put("dateString", oRecord.displayTime);
                         typeSaved = null;
-                        if (oRecord instanceof EGVRecord && dexcomData != null) {
-                            EGVRecord record = (EGVRecord) oRecord;
+                        if (oRecord instanceof Record && dexcomData != null) {
+                            Record record =  oRecord;
                             // make db object
                             testData.put("device", getSelectedDeviceName());
                             testData.put("sgv", record.bGValue);
@@ -777,8 +773,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                         testData.put("date", date.getTime());
                         testData.put("dateString", oRecord.displayTime);
                         typeSaved = null;
-                        if (oRecord instanceof EGVRecord) {
-                            EGVRecord record = (EGVRecord) oRecord;
+                        if (oRecord instanceof Record) {
+                            Record record = (Record) oRecord;
                             // make db object
                             testData.put("device", getSelectedDeviceName());
                             testData.put("sgv", record.bGValue);

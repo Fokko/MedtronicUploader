@@ -14,7 +14,6 @@ import android.util.Log;
 import android.widget.RemoteViews;
 
 import com.nightscout.android.R;
-import com.nightscout.android.dexcom.EGVRecord;
 import com.nightscout.android.medtronic.MedtronicActivity;
 import com.nightscout.android.medtronic.MedtronicConstants;
 import com.nightscout.android.upload.MedtronicSensorRecord;
@@ -80,8 +79,8 @@ public class CGMWidgetUpdater extends Service {
             views.setTextViewText(R.id.sgv_id, record.bGValue + calib);
             views.setTextViewText(R.id.arrow_id, record.trendArrow);
 
-        } else if (auxRecord instanceof EGVRecord) {
-            EGVRecord record = (EGVRecord) auxRecord;
+        } else if (auxRecord instanceof Record) {
+            Record record = (Record) auxRecord;
             views.setTextViewText(R.id.sgv_id, record.bGValue);
             views.setTextViewText(R.id.arrow_id, record.trendArrow);
         } else {

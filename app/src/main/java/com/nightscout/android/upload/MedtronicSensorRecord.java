@@ -1,12 +1,8 @@
 package com.nightscout.android.upload;
 
-import com.nightscout.android.dexcom.EGVRecord;
 import com.nightscout.android.medtronic.MedtronicConstants;
 
-public class MedtronicSensorRecord extends EGVRecord {
-    /**
-     *
-     */
+public class MedtronicSensorRecord extends Record {
     private static final long serialVersionUID = 7653259513544666489L;
 
     public float isig = 0;

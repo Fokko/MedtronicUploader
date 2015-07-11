@@ -38,7 +38,6 @@ import android.widget.TextView;
 import android.widget.TextView.BufferType;
 
 import com.nightscout.android.R;
-import com.nightscout.android.dexcom.EGVRecord;
 import com.nightscout.android.eula.Eula;
 import com.nightscout.android.eula.Eula.OnEulaAgreedTo;
 import com.nightscout.android.settings.SettingsActivity;
@@ -205,8 +204,8 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                                 } else
                                     mDumpTextView.setText("\n" + (System.currentTimeMillis() - record.displayDateTime) / 60000 + " min. ago\n" + record.bGValue + "  " + record.trendArrow + "\n" + calib + "\n");
 
-                            } else if (auxRecord instanceof EGVRecord) {
-                                EGVRecord record = (EGVRecord) auxRecord;
+                            } else if (auxRecord instanceof Record) {
+                                Record record = (Record) auxRecord;
                                 if (prefs.getBoolean("mmolxl", false)) {
                                     Float fBgValue = null;
                                     try {
@@ -461,8 +460,8 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                                     + "  " + record.trendArrow + "\n" + calib
                                     + "\n");
 
-            } else if (auxRecord instanceof EGVRecord) {
-                EGVRecord record = (EGVRecord) auxRecord;
+            } else if (auxRecord instanceof Record) {
+                Record record = (Record) auxRecord;
                 if (prefs.getBoolean("mmolxl", false)) {
                     Float fBgValue = null;
                     try {
