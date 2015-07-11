@@ -308,7 +308,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
                     String jsonString = json.toString();
 
-                    Log.i(TAG, "DEXCOM JSON: " + jsonString);
+                    Log.i(TAG, "JSON: " + jsonString);
                     log.debug("JSON to Upload " + jsonString);
 
                     try {
@@ -380,8 +380,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
                 String jsonString = json.toString();
 
-                Log.i(TAG, "DEXCOM JSON: " + jsonString);
-                log.info("DEXCOM JSON: " + jsonString);
+                Log.i(TAG, "JSON: " + jsonString);
+                log.info("JSON: " + jsonString);
 
                 try {
                     StringEntity se = new StringEntity(jsonString);
@@ -613,6 +613,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                                         atLeastOne = true;
                                     }
                                 }
+
                                 if (atLeastOne)
                                     dexcomData.save(testData, WriteConcern.UNACKNOWLEDGED);
                             }
