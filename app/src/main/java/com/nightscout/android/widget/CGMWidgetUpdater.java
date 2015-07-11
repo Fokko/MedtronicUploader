@@ -1,7 +1,6 @@
 package com.nightscout.android.widget;
 
 import android.app.KeyguardManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
@@ -22,34 +21,29 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 
-public class CGMWidgetUpdater extends Service{
-	
-	public static int UPDATE_FREQUENCY_SEC = 10;
-	@Override  
-    public void onCreate()  
-    {  
-        super.onCreate();  
-    }  
-  
-    @Override  
-    public int onStartCommand(Intent intent, int flags, int startId)  
-    {  
-        buildUpdate();  
-  
-        return super.onStartCommand(intent, flags, startId);  
-    }  
-  
-    private void buildUpdate()  
-    {  
-    	
-    	RemoteViews views = null;
-    	KeyguardManager myKM = (KeyguardManager) getBaseContext().getSystemService(Context.KEYGUARD_SERVICE);
-    	if( myKM.inKeyguardRestrictedInputMode()) {
-    		views = new RemoteViews(getPackageName(), R.layout.widget_lock);
-    	} else {
-    		views = new RemoteViews(getPackageName(), R.layout.widget_main);
-    	}
-    	Record auxRecord =  CGMWidgetUpdater.this.loadClassFile(new File(getBaseContext().getFilesDir(), "save.bin"));
+public class CGMWidgetUpdater extends Service {
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        buildUpdate();
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void buildUpdate() {
+
+        RemoteViews views;
+        KeyguardManager myKM = (KeyguardManager) getBaseContext().getSystemService(Context.KEYGUARD_SERVICE);
+        if (myKM.inKeyguardRestrictedInputMode()) {
+            views = new RemoteViews(getPackageName(), R.layout.widget_lock);
+        } else {
+            views = new RemoteViews(getPackageName(), R.layout.widget_main);
+        }
+        Record auxRecord = CGMWidgetUpdater.this.loadClassFile(new File(getBaseContext().getFilesDir(), "save.bin"));
         updateValues(auxRecord, views);
 
         // Push update for this widget to the home screen  
@@ -64,11 +58,13 @@ public class CGMWidgetUpdater extends Service{
                     .getDefaultSharedPreferences(getBaseContext());
             MedtronicSensorRecord record = (MedtronicSensorRecord) auxRecord;
             boolean isCalibrating = record.isCalibrating;
-            String calib = "---";
-            if (isCalibrating)
+            String calib;
+            if (isCalibrating) {
                 calib = "*";
-            else
+            } else {
                 calib = MedtronicConstants.getWidgetCalAppend(record.calibrationStatus);
+            }
+
             if (prefs.getBoolean("isWarmingUp", false)) {
                 calib = "";
                 record.bGValue = "W._Up";
@@ -78,7 +74,7 @@ public class CGMWidgetUpdater extends Service{
             views.setTextViewText(R.id.arrow_id, record.trendArrow);
 
         } else if (auxRecord instanceof Record) {
-            Record record = (Record) auxRecord;
+            Record record = auxRecord;
             views.setTextViewText(R.id.sgv_id, record.bGValue);
             views.setTextViewText(R.id.arrow_id, record.trendArrow);
         } else {
@@ -103,7 +99,7 @@ public class CGMWidgetUpdater extends Service{
                 Log.e("CGMWidget", " Error closing ObjectInputStream");
             }
         }
-        return new Record();
+        return null;
     }
 
     @Override

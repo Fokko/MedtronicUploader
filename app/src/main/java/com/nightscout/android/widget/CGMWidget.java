@@ -102,7 +102,7 @@ public class CGMWidget extends AppWidgetProvider {
                 Log.e("CGMWidget", " Error closing ObjectInputStream");
             }
         }
-        return new Record();
+        return null;
     }
 
 

@@ -518,7 +518,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                 Log.e(TAG, " Error closing ObjectInputStream");
             }
         }
-        return new Record();
+        return null;
     }
 
     @Override

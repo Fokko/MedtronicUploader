@@ -2575,7 +2575,6 @@ public class MedtronicReader {
      * This function calculates the SVG to upload applying a filter to the
      * Unfiltered glucose data
      *
-     * @param prevRecord
      * @param auxList
      * @return
      */
