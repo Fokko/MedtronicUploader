@@ -9,9 +9,7 @@
     <option name="TOOL_WINDOW_CONFIGURED_FILTER" value="Show only selected application" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="972b6706-4e8a-478c-bc62-c8c325b60f06" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/UploadHelper.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/UploadHelper.java" />
-    </list>
+    <list default="true" id="972b6706-4e8a-478c-bc62-c8c325b60f06" name="Default" comment="" />
     <ignored path="MedtronicUploaderSulkaharo1.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
