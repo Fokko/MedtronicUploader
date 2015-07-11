@@ -18,7 +18,7 @@
  * Project home page: http://code.google.com/p/usb-serial-for-android/
  */
 
-package com.nightscout.android.dexcom.USB;
+package com.nightscout.android.USB;
 
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
@@ -90,25 +90,13 @@ public enum UsbSerialProber {
     private static final String TAG = UsbSerialProber.class.getSimpleName();
 
     /**
-     * Builds a new {@link UsbSerialDriver} instance from the raw device, or
-     * returns <code>null</code> if it could not be built (for example, if the
-     * probe failed).
-     *
-     * @param manager the {@link android.hardware.usb.UsbManager} to use
-     * @param usbDevice the raw {@link android.hardware.usb.UsbDevice} to use
-     * @return the first available {@link UsbSerialDriver}, or {@code null} if
-     *         no devices could be acquired
-     */
-    public abstract UsbSerialDriver getDevice(final UsbManager manager, final UsbDevice usbDevice);
-
-    /**
      * Acquires and returns the first available serial device among all
      * available {@link android.hardware.usb.UsbDevice}s, or returns {@code null} if no device could
      * be acquired.
      *
      * @param usbManager the {@link android.hardware.usb.UsbManager} to use
      * @return the first available {@link UsbSerialDriver}, or {@code null} if
-     *         no devices could be acquired
+     * no devices could be acquired
      */
     public static UsbSerialDriver acquire(final UsbManager usbManager) {
         for (final UsbDevice usbDevice : usbManager.getDeviceList().values()) {
@@ -126,9 +114,9 @@ public enum UsbSerialProber {
      * device.
      *
      * @param usbManager the {@link android.hardware.usb.UsbManager} to use
-     * @param usbDevice the {@link android.hardware.usb.UsbDevice} to use
+     * @param usbDevice  the {@link android.hardware.usb.UsbDevice} to use
      * @return a new {@link UsbSerialDriver}, or {@code null} if no devices
-     *         could be acquired
+     * could be acquired
      */
     public static UsbSerialDriver acquire(final UsbManager usbManager, final UsbDevice usbDevice) {
         if (!usbManager.hasPermission(usbDevice)) {
@@ -147,12 +135,12 @@ public enum UsbSerialProber {
     /**
      * Returns {@code true} if the given device is found in the vendor/product map.
      *
-     * @param usbDevice the device to test
+     * @param usbDevice        the device to test
      * @param supportedDevices map of vendor ids to product id(s)
      * @return {@code true} if supported
      */
     private static boolean testIfSupported(final UsbDevice usbDevice,
-            final Map<Integer, int[]> supportedDevices) {
+                                           final Map<Integer, int[]> supportedDevices) {
         final int[] supportedProducts = supportedDevices.get(
                 Integer.valueOf(usbDevice.getVendorId()));
         if (supportedProducts == null) {
@@ -167,5 +155,17 @@ public enum UsbSerialProber {
         }
         return false;
     }
+
+    /**
+     * Builds a new {@link UsbSerialDriver} instance from the raw device, or
+     * returns <code>null</code> if it could not be built (for example, if the
+     * probe failed).
+     *
+     * @param manager   the {@link android.hardware.usb.UsbManager} to use
+     * @param usbDevice the raw {@link android.hardware.usb.UsbDevice} to use
+     * @return the first available {@link UsbSerialDriver}, or {@code null} if
+     * no devices could be acquired
+     */
+    public abstract UsbSerialDriver getDevice(final UsbManager manager, final UsbDevice usbDevice);
 
 }

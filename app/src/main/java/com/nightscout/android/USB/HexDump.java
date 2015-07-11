@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.nightscout.android.dexcom.USB;
+package com.nightscout.android.USB;
 
 /**
  * Clone of Android's HexDump class, for use in debugging. Cosmetic changes
@@ -102,6 +102,7 @@ public class HexDump {
 
         return new String(buf);
     }
+
     public static String toHexString(int i) {
         return toHexString(toByteArray(i));
     }
@@ -137,8 +138,8 @@ public class HexDump {
     public static byte[] hexStringToByteArray(String hexString) {
         int length = hexString.length();
         byte[] buffer = new byte[length / 2];
-        if (length% 2 == 1)
-        	length--;
+        if (length % 2 == 1)
+            length--;
         for (int i = 0; i < length; i += 2) {
             buffer[i / 2] = (byte) ((toByte(hexString.charAt(i)) << 4) | toByte(hexString
                     .charAt(i + 1)));
@@ -146,36 +147,38 @@ public class HexDump {
 
         return buffer;
     }
-    
-    public static int unsignedByte(byte b){
-    	return  (b & 0xFF);
+
+    public static int unsignedByte(byte b) {
+        return (b & 0xFF);
     }
-    
-    public static byte bUnsignedByte(byte b){
-    	return  (byte)(b & 0xFF);
+
+    public static byte bUnsignedByte(byte b) {
+        return (byte) (b & 0xFF);
     }
+
     public static boolean isHexaNumber(String cadena) {
         try {
-            Long.parseLong(cadena,16);
+            Long.parseLong(cadena, 16);
             return true;
         } catch (NumberFormatException nfe) {
             return false;
         }
     }
-    
-    public static int byteArrayToInt (byte[] arr){
-    	int length = arr.length;
-    	int mult = 1;
-    	int res = 0;
-    	if (length > 0 && length <5){
-    		for (int i = length-1; i >= 0; i--){
-    			res += unsignedByte(arr[i])*mult;
-    			mult *=256;
-    		}
-    	}
-    	return res;
+
+    public static int byteArrayToInt(byte[] arr) {
+        int length = arr.length;
+        int mult = 1;
+        int res = 0;
+        if (length > 0 && length < 5) {
+            for (int i = length - 1; i >= 0; i--) {
+                res += unsignedByte(arr[i]) * mult;
+                mult *= 256;
+            }
+        }
+        return res;
     }
-    public static short byteArrayToShort (byte[] arr){
-    	return (short) (unsignedByte(arr[0])*256 + unsignedByte(arr[1]));
+
+    public static short byteArrayToShort(byte[] arr) {
+        return (short) (unsignedByte(arr[0]) * 256 + unsignedByte(arr[1]));
     }
 }

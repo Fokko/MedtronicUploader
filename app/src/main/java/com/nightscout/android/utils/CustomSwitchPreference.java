@@ -12,8 +12,8 @@ public class CustomSwitchPreference extends SwitchPreference {
     /**
      * Construct a new SwitchPreference with the given style options.
      *
-     * @param context The Context that will style this preference
-     * @param attrs Style attributes that differ from the default
+     * @param context  The Context that will style this preference
+     * @param attrs    Style attributes that differ from the default
      * @param defStyle Theme attribute defining the default style options
      */
     public CustomSwitchPreference(Context context, AttributeSet attrs, int defStyle) {
@@ -24,7 +24,7 @@ public class CustomSwitchPreference extends SwitchPreference {
      * Construct a new SwitchPreference with the given style options.
      *
      * @param context The Context that will style this preference
-     * @param attrs Style attributes that differ from the default
+     * @param attrs   Style attributes that differ from the default
      */
     public CustomSwitchPreference(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -42,7 +42,7 @@ public class CustomSwitchPreference extends SwitchPreference {
     @Override
     protected void onBindView(View view) {
         // Clean listener before invoke SwitchPreference.onBindView
-        ViewGroup viewGroup= (ViewGroup)view;
+        ViewGroup viewGroup = (ViewGroup) view;
         clearListenerInViewGroup(viewGroup);
         super.onBindView(view);
     }
@@ -58,14 +58,14 @@ public class CustomSwitchPreference extends SwitchPreference {
         }
 
         int count = viewGroup.getChildCount();
-        for(int n = 0; n < count; ++n) {
+        for (int n = 0; n < count; ++n) {
             View childView = viewGroup.getChildAt(n);
-            if(childView instanceof Switch) {
+            if (childView instanceof Switch) {
                 final Switch switchView = (Switch) childView;
                 switchView.setOnCheckedChangeListener(null);
                 return;
-            } else if (childView instanceof ViewGroup){
-                ViewGroup childGroup = (ViewGroup)childView;
+            } else if (childView instanceof ViewGroup) {
+                ViewGroup childGroup = (ViewGroup) childView;
                 clearListenerInViewGroup(childGroup);
             }
         }

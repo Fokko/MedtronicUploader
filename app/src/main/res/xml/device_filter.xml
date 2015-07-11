@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2011 The Android Open Source Project
+<?xml version="1.0" encoding="utf-8"?><!-- Copyright (C) 2011 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -15,7 +14,16 @@
      <usb-device vendor-id="1027" product-id="24577"/>
 -->
 <resources>
-    <usb-device vendor-id="8867" product-id="71" class="2" subclass="0" protocol="0" />
-    <usb-device vendor-id="1105" product-id="5798"/>
-    <usb-device vendor-id="1027" product-id="24577"/>
+    <usb-device
+        class="2"
+        product-id="71"
+        protocol="0"
+        subclass="0"
+        vendor-id="8867" />
+    <usb-device
+        product-id="5798"
+        vendor-id="1105" />
+    <usb-device
+        product-id="24577"
+        vendor-id="1027" />
 </resources>
