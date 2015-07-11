@@ -1,2 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<merger version="3"><dataSet config="main"><source path="/home/fokko/Desktop/MedtronicUploaderSulkaharo1/app/src/main/assets"><file name="EULA" path="/home/fokko/Desktop/MedtronicUploaderSulkaharo1/app/src/main/assets/EULA"/><file name="logback.xml" path="/home/fokko/Desktop/MedtronicUploaderSulkaharo1/app/src/main/assets/logback.xml"/></source></dataSet><dataSet config="debug"><source path="/home/fokko/Desktop/MedtronicUploaderSulkaharo1/app/src/debug/assets"/></dataSet></merger>
