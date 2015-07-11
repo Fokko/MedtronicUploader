@@ -11,10 +11,11 @@ public abstract class Record implements Serializable {
     public String trend = "---";
     public String trendArrow = "---";
 
-    public void setDisplayTime (String input) {
+    public void setDisplayTime(String input) {
         this.displayTime = input;
     }
-    public void setBGValue (String input) {
+
+    public void setBGValue(String input) {
         this.bGValue = input;
     }
 }

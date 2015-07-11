@@ -10,8 +10,6 @@ import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import ch.qos.logback.classic.Logger;
-
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -26,6 +24,7 @@ import com.nightscout.android.medtronic.MedtronicActivity;
 import com.nightscout.android.medtronic.MedtronicConstants;
 import com.nightscout.android.medtronic.MedtronicReader;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -47,6 +46,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+
+import ch.qos.logback.classic.Logger;
 
 public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
@@ -126,9 +127,9 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
         }
     }
 
-    
+
     public UploadHelper(Context context, ArrayList<Messenger> mClients) {
-    	this(context);
+        this(context);
         this.mClients = mClients;
     }
 
@@ -490,7 +491,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
             json.put("direction", record.trend);
             json.put("isig", record.isig);
             json.put("calibrationFactor", record.calibrationFactor);
-            json.put("calibrationStatus",  record.calibrationStatus);
+            json.put("calibrationStatus", record.calibrationStatus);
             json.put("unfilteredGlucose", record.unfilteredGlucose);
             json.put("isCalibrating", record.isCalibrating);
 
@@ -522,7 +523,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
             json.put("direction", record.trend);
             json.put("isig", record.isig);
             json.put("calibrationFactor", record.calibrationFactor);
-            json.put("calibrationStatus",  record.calibrationStatus);
+            json.put("calibrationStatus", record.calibrationStatus);
             json.put("unfilteredGlucose", record.unfilteredGlucose);
             json.put("isCalibrating", record.isCalibrating);
         } else if (oRecord instanceof MedtronicPumpRecord) {
@@ -646,7 +647,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                         testData.put("dateString", oRecord.displayTime);
                         typeSaved = null;
                         if (oRecord instanceof Record && dexcomData != null) {
-                            Record record =  oRecord;
+                            Record record = oRecord;
                             // make db object
                             testData.put("device", getSelectedDeviceName());
                             testData.put("sgv", record.bGValue);
@@ -805,14 +806,10 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
                     }
                 }
+
                 Log.e(TAG, "Unable to upload data to mongo", e);
                 log.error("Unable to upload data to mongo", e);
-                StringBuffer sb1 = new StringBuffer("");
-                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                for (StackTraceElement st : e.getStackTrace()) {
-                    sb1.append(st.toString());
-                }
-                sendMessageToUI(sb1.toString(), false);
+                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
             }
             try {
                 if (db != null) {
@@ -860,12 +857,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                 }
                 Log.e(TAG, "Unable to upload battery data to mongo", e);
                 log.error("Unable to upload battery data to mongo", e);
-                StringBuffer sb1 = new StringBuffer("");
-                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                for (StackTraceElement st : e.getStackTrace()) {
-                    sb1.append(st.toString());
-                }
-                sendMessageToUI(sb1.toString(), false);
+
+                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
             }
             if (cursor != null) {
                 cursor.close();

@@ -44,6 +44,7 @@ import com.physicaloid.lib.Physicaloid;
 import com.physicaloid.lib.usb.driver.uart.ReadLisener;
 import com.physicaloid.lib.usb.driver.uart.UartConfig;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.LoggerFactory;
@@ -241,14 +242,7 @@ public class MedtronicCGMService extends Service implements
                     }
                 }
             } catch (Exception e) {
-                StringBuffer sb1 = new StringBuffer("");
-                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " "
-                        + e.getCause());
-                for (StackTraceElement st : e.getStackTrace()) {
-                    sb1.append(st.toString()).append("\n");
-                    ;
-                }
-                sendMessageToUI(sb1.toString(), false);
+                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
                 synchronized (medtronicReader.processingCommand) {
                     medtronicReader.processingCommand = false;
                 }
@@ -257,6 +251,65 @@ public class MedtronicCGMService extends Service implements
                     mHandler3ActivatePump.removeCallbacks(activateNewPump);
                     mHandler3ActivatePump.postDelayed(activateNewPump, MedtronicConstants.TIME_5_MIN_IN_MS);
                 }
+            }
+
+        }
+    };
+    /**
+     * Check last Historic Log read. (This will not be possible in newer Medtronic Pumps)
+     */
+    private Runnable checkLastRead = new Runnable() {
+        public void run() {
+            if (prefs.getString("glucSrcTypes", "1").equals("3")) {
+
+                String type = prefs.getString("historicMixPeriod", "1");
+                if ("2".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_15_MIN_IN_MS;
+                else if ("3".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_20_MIN_IN_MS;
+                else if ("4".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_20_MIN_IN_MS + MedtronicConstants.TIME_5_MIN_IN_MS;
+                else if ("5".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS;
+                else if ("6".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS + MedtronicConstants.TIME_5_MIN_IN_MS;
+                else if ("7".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS + MedtronicConstants.TIME_10_MIN_IN_MS;
+                else if ("8".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS + MedtronicConstants.TIME_15_MIN_IN_MS;
+                else if ("9".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS + MedtronicConstants.TIME_20_MIN_IN_MS;
+                else if ("10".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_60_MIN_IN_MS - MedtronicConstants.TIME_5_MIN_IN_MS;
+                else if ("11".equalsIgnoreCase(type))
+                    historicLogPeriod = MedtronicConstants.TIME_60_MIN_IN_MS;
+                else
+                    historicLogPeriod = MedtronicConstants.TIME_10_MIN_IN_MS;
+
+                if (medtronicReader != null && medtronicReader.lastSensorValueDate > 0) {
+                    if ((System.currentTimeMillis() - medtronicReader.lastSensorValueDate) >= historicLogPeriod) {
+                        if (settings.getLong("lastHistoricRead", 0) != 0) {
+                            if ((System.currentTimeMillis() - settings.getLong("lastHistoricRead", 0)) >= historicLogPeriod) {
+                                mHandlerReadFromHistoric.post(readDataFromHistoric);
+                                return;
+                            }
+                        } else {
+                            mHandlerReadFromHistoric.post(readDataFromHistoric);
+                            return;
+                        }
+                    }
+                } else {
+                    if (settings.getLong("lastHistoricRead", 0) != 0) {
+                        if ((System.currentTimeMillis() - settings.getLong("lastHistoricRead", 0)) >= historicLogPeriod) {
+                            mHandlerReadFromHistoric.post(readDataFromHistoric);
+                            return;
+                        }
+                    } else {
+                        mHandlerReadFromHistoric.post(readDataFromHistoric);
+                        return;
+                    }
+                }
+                mHandlerCheckLastRead.postDelayed(checkLastRead, MedtronicConstants.TIME_10_MIN_IN_MS);
             }
 
         }
@@ -389,14 +442,7 @@ public class MedtronicCGMService extends Service implements
                     }
                 }
             } catch (Exception e) {
-                StringBuffer sb1 = new StringBuffer("");
-                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " "
-                        + e.getCause());
-                for (StackTraceElement st : e.getStackTrace()) {
-                    sb1.append(st.toString()).append("\n");
-                    ;
-                }
-                sendMessageToUI(sb1.toString(), false);
+                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
                 synchronized (medtronicReader.processingCommand) {
                     medtronicReader.processingCommand = false;
                 }
@@ -435,65 +481,6 @@ public class MedtronicCGMService extends Service implements
                     }
 
                 }
-            }
-
-        }
-    };
-    /**
-     * Check last Historic Log read. (This will not be possible in newer Medtronic Pumps)
-     */
-    private Runnable checkLastRead = new Runnable() {
-        public void run() {
-            if (prefs.getString("glucSrcTypes", "1").equals("3")) {
-
-                String type = prefs.getString("historicMixPeriod", "1");
-                if ("2".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_15_MIN_IN_MS;
-                else if ("3".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_20_MIN_IN_MS;
-                else if ("4".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_20_MIN_IN_MS + MedtronicConstants.TIME_5_MIN_IN_MS;
-                else if ("5".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS;
-                else if ("6".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS + MedtronicConstants.TIME_5_MIN_IN_MS;
-                else if ("7".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS + MedtronicConstants.TIME_10_MIN_IN_MS;
-                else if ("8".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS + MedtronicConstants.TIME_15_MIN_IN_MS;
-                else if ("9".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_30_MIN_IN_MS + MedtronicConstants.TIME_20_MIN_IN_MS;
-                else if ("10".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_60_MIN_IN_MS - MedtronicConstants.TIME_5_MIN_IN_MS;
-                else if ("11".equalsIgnoreCase(type))
-                    historicLogPeriod = MedtronicConstants.TIME_60_MIN_IN_MS;
-                else
-                    historicLogPeriod = MedtronicConstants.TIME_10_MIN_IN_MS;
-
-                if (medtronicReader != null && medtronicReader.lastSensorValueDate > 0) {
-                    if ((System.currentTimeMillis() - medtronicReader.lastSensorValueDate) >= historicLogPeriod) {
-                        if (settings.getLong("lastHistoricRead", 0) != 0) {
-                            if ((System.currentTimeMillis() - settings.getLong("lastHistoricRead", 0)) >= historicLogPeriod) {
-                                mHandlerReadFromHistoric.post(readDataFromHistoric);
-                                return;
-                            }
-                        } else {
-                            mHandlerReadFromHistoric.post(readDataFromHistoric);
-                            return;
-                        }
-                    }
-                } else {
-                    if (settings.getLong("lastHistoricRead", 0) != 0) {
-                        if ((System.currentTimeMillis() - settings.getLong("lastHistoricRead", 0)) >= historicLogPeriod) {
-                            mHandlerReadFromHistoric.post(readDataFromHistoric);
-                            return;
-                        }
-                    } else {
-                        mHandlerReadFromHistoric.post(readDataFromHistoric);
-                        return;
-                    }
-                }
-                mHandlerCheckLastRead.postDelayed(checkLastRead, MedtronicConstants.TIME_10_MIN_IN_MS);
             }
 
         }
@@ -550,14 +537,7 @@ public class MedtronicCGMService extends Service implements
                     }
                 }
             } catch (Exception e) {
-                StringBuffer sb1 = new StringBuffer("");
-                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " "
-                        + e.getCause());
-                for (StackTraceElement st : e.getStackTrace()) {
-                    sb1.append(st.toString()).append("\n");
-                    ;
-                }
-                sendMessageToUI(sb1.toString(), false);
+                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
                 synchronized (medtronicReader.processingCommand) {
                     medtronicReader.processingCommand = false;
                 }
@@ -568,6 +548,18 @@ public class MedtronicCGMService extends Service implements
                 }
             }
 
+        }
+    };
+    /**
+     * BroadcastReceiver when insert/remove the device USB plug into/from a USB port
+     */
+    BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+                sendMessageDisconnectedToUI();
+                closeUsbSerial();
+            }
         }
     };
     /**
@@ -666,15 +658,9 @@ public class MedtronicCGMService extends Service implements
                 }
 
             } catch (Exception e) {
+                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
+
                 Log.e(TAG, "Unable to read from receptor or upload", e);
-                StringBuffer sb1 = new StringBuffer("");
-                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " "
-                        + e.getCause());
-                for (StackTraceElement st : e.getStackTrace()) {
-                    sb1.append(st.toString()).append("\n");
-                    ;
-                }
-                sendMessageToUI(sb1.toString(), false);
                 log.error("Unable to read from receptor or upload \n" + e.toString());
             }
             synchronized (mHandlerCheckSerial) {
@@ -684,18 +670,6 @@ public class MedtronicCGMService extends Service implements
                 }
                 mHandlerCheckSerial.removeCallbacks(readAndUpload);
                 mHandlerCheckSerial.postDelayed(readAndUpload, MedtronicConstants.FIVE_SECONDS__MS);
-            }
-        }
-    };
-    /**
-     * BroadcastReceiver when insert/remove the device USB plug into/from a USB port
-     */
-    BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                sendMessageDisconnectedToUI();
-                closeUsbSerial();
             }
         }
     };
@@ -1155,12 +1129,7 @@ public class MedtronicCGMService extends Service implements
 
             }
         } catch (Exception e) {
-            StringBuffer sb1 = new StringBuffer("");
-            sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-            for (StackTraceElement st : e.getStackTrace()) {
-                sb1.append(st.toString());
-            }
-            sendMessageToUI(sb1.toString(), false);
+            sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
         }
     }
 
@@ -1649,12 +1618,7 @@ public class MedtronicCGMService extends Service implements
                                     sendMessageCalibrationDoneToUI();
                                 } catch (Exception e) {
                                     sendErrorMessageToUI("Error parsing Calibration");
-                                    StringBuffer sb1 = new StringBuffer("");
-                                    sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                                    for (StackTraceElement st : e.getStackTrace()) {
-                                        sb1.append(st.toString());
-                                    }
-                                    sendMessageToUI(sb1.toString(), false);
+                                    sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
                                 }
                             } else {
                                 if (value.indexOf(".") > -1) {
@@ -1668,12 +1632,7 @@ public class MedtronicCGMService extends Service implements
                         }
                     } catch (Exception e) {
                         sendErrorMessageToUI("Error parsing Calibration");
-                        StringBuffer sb1 = new StringBuffer("");
-                        sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                        for (StackTraceElement st : e.getStackTrace()) {
-                            sb1.append(st.toString());
-                        }
-                        sendMessageToUI(sb1.toString(), false);
+                        sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
                     }
                     break;
                 case MedtronicConstants.MSG_MEDTRONIC_SEND_INSTANT_CALIB_VALUE:
@@ -1696,12 +1655,7 @@ public class MedtronicCGMService extends Service implements
                                     sendMessageCalibrationDoneToUI();
                                 } catch (Exception e) {
                                     sendErrorMessageToUI("Error parsing Calibration");
-                                    StringBuffer sb1 = new StringBuffer("");
-                                    sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                                    for (StackTraceElement st : e.getStackTrace()) {
-                                        sb1.append(st.toString());
-                                    }
-                                    sendMessageToUI(sb1.toString(), false);
+                                    sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
                                 }
                             } else {
                                 if (value.indexOf(".") > -1) {
@@ -1715,12 +1669,7 @@ public class MedtronicCGMService extends Service implements
                         }
                     } catch (Exception e) {
                         sendErrorMessageToUI("Error parsing Calibration");
-                        StringBuffer sb1 = new StringBuffer("");
-                        sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                        for (StackTraceElement st : e.getStackTrace()) {
-                            sb1.append(st.toString());
-                        }
-                        sendMessageToUI(sb1.toString(), false);
+                        sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
                     }
                     break;
                 case MedtronicConstants.MSG_MEDTRONIC_SEND_GET_PUMP_INFO:

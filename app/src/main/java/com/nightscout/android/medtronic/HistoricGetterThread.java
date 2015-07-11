@@ -6,6 +6,8 @@ import android.os.Messenger;
 import com.nightscout.android.USB.HexDump;
 import com.physicaloid.lib.Physicaloid;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -158,7 +160,7 @@ public class HistoricGetterThread extends CommandSenderThread {
                 }
                 return;
             }
-            byte command = commandList[index];
+            byte command = commandList[index++];
             if (withoutConfirmation <= 0 || command == MedtronicConstants.MEDTRONIC_INIT) {
                 synchronized (reader.waitingCommand) {
                     reader.waitingCommand = true;
@@ -178,14 +180,8 @@ public class HistoricGetterThread extends CommandSenderThread {
             wThread.command = command;
             wThread.instance = this;
             mHandler3.post(wThread);
-            index++;
         } catch (Exception e) {
-            StringBuffer sb1 = new StringBuffer("");
-            sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-            for (StackTraceElement st : e.getStackTrace()) {
-                sb1.append(st.toString());
-            }
-            sendMessageToUI(sb1.toString(), false);
+            sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
         }
 
     }

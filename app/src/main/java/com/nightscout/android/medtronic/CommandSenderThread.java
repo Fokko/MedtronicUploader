@@ -7,11 +7,10 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
-import ch.qos.logback.classic.Logger;
-
 import com.nightscout.android.USB.HexDump;
 import com.physicaloid.lib.Physicaloid;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
@@ -129,12 +128,7 @@ public class CommandSenderThread implements Runnable {
             mHandler3.post(wThread);
             index++;
         } catch (Exception e) {
-            StringBuffer sb1 = new StringBuffer("");
-            sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-            for (StackTraceElement st : e.getStackTrace()) {
-                sb1.append(st.toString());
-            }
-            sendMessageToUI(sb1.toString(), false);
+            sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
         }
 
     }
@@ -164,12 +158,7 @@ public class CommandSenderThread implements Runnable {
                 return resultWrite;
             }
         } catch (Exception e) {
-            StringBuffer sb1 = new StringBuffer("");
-            sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-            for (StackTraceElement st : e.getStackTrace()) {
-                sb1.append(st.toString());
-            }
-            sendMessageToUI(sb1.toString(), false);
+            sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
         }
 
         return -1;
@@ -208,12 +197,7 @@ public class CommandSenderThread implements Runnable {
                 return resultWrite;
             }
         } catch (Exception e) {
-            StringBuffer sb1 = new StringBuffer("");
-            sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-            for (StackTraceElement st : e.getStackTrace()) {
-                sb1.append(st.toString());
-            }
-            sendMessageToUI(sb1.toString(), false);
+            sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
         }
 
         return -1;
@@ -386,12 +370,7 @@ public class CommandSenderThread implements Runnable {
 
                 }
             } catch (Exception e) {
-                StringBuffer sb1 = new StringBuffer("");
-                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                for (StackTraceElement st : e.getStackTrace()) {
-                    sb1.append(st.toString());
-                }
-                sendMessageToUI(sb1.toString(), false);
+                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
             }
 
         }

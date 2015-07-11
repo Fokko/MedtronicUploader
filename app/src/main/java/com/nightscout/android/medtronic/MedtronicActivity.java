@@ -44,6 +44,7 @@ import com.nightscout.android.settings.SettingsActivity;
 import com.nightscout.android.upload.MedtronicSensorRecord;
 import com.nightscout.android.upload.Record;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -97,12 +98,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                 mService.send(msg);
             } catch (RemoteException e) {
 
-                StringBuffer sb1 = new StringBuffer("");
-                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                for (StackTraceElement st : e.getStackTrace()) {
-                    sb1.append(st.toString()).append("\n");
-                }
-                Log.e("ONSERVICECONNECTED", "Error Registering Client Service Connection\n" + sb1.toString());
+                Log.e("ONSERVICECONNECTED", "Error Registering Client Service Connection\n" + ExceptionUtils.getStackTrace(e));
                 if (ISDEBUG) {
                     display.setText(display.getText() + "Error Registering Client Service Connection\n", BufferType.EDITABLE);
                 }
@@ -567,12 +563,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                         msg.replyTo = mMessenger;
                         mService.send(msg);
                     } catch (RemoteException e) {
-                        StringBuffer sb1 = new StringBuffer("");
-                        sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                        for (StackTraceElement st : e.getStackTrace()) {
-                            sb1.append(st.toString()).append("\n");
-                        }
-                        //log.error("medtronicManualCalibration", "Error sending Manual Calibration\n "+sb1.toString());
+                        log.error("medtronicManualCalibration", ExceptionUtils.getStackTrace(e));
                         if (ISDEBUG) {
                             display.setText(display.getText() + "Error sending get sensor Calibration factor\n", BufferType.EDITABLE);
                         }
@@ -591,12 +582,8 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                         msg.replyTo = mMessenger;
                         mService.send(msg);
                     } catch (RemoteException e) {
-                        StringBuffer sb1 = new StringBuffer("");
-                        sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                        for (StackTraceElement st : e.getStackTrace()) {
-                            sb1.append(st.toString()).append("\n");
-                        }
-                        //log.error("medtronicManualCalibration", "Error sending Manual Calibration\n "+sb1.toString());
+
+                        log.error("medtronicManualCalibration", ExceptionUtils.getStackTrace(e));
                         if (ISDEBUG) {
                             display.setText(display.getText() + "Error sending get pump info\n", BufferType.EDITABLE);
                         }
@@ -639,12 +626,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                                 msg.replyTo = mMessenger;
                                 mService.send(msg);
                             } catch (RemoteException e) {
-                                StringBuffer sb1 = new StringBuffer("");
-                                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                                for (StackTraceElement st : e.getStackTrace()) {
-                                    sb1.append(st.toString()).append("\n");
-                                }
-                                Log.e("man_calibration", "Error sending Manual Calibration\n " + sb1.toString());
+                                Log.e("man_calibration", "Error sending Manual Calibration\n " + ExceptionUtils.getStackTrace(e));
                                 if (ISDEBUG) {
                                     display.setText(display.getText() + "Error sending Manual Calibration\n", BufferType.EDITABLE);
                                 }
@@ -694,12 +676,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                                 msg.replyTo = mMessenger;
                                 mService.send(msg);
                             } catch (RemoteException e) {
-                                StringBuffer sb1 = new StringBuffer("");
-                                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-                                for (StackTraceElement st : e.getStackTrace()) {
-                                    sb1.append(st.toString()).append("\n");
-                                }
-                                Log.e("medManCal", "Error sending Instant Calibration\n " + sb1.toString());
+                                Log.e("medManCal", "Error sending Instant Calibration\n " + ExceptionUtils.getStackTrace(e));
                                 if (ISDEBUG) {
                                     display.setText(display.getText() + "Error sending Instant Calibration\n", BufferType.EDITABLE);
                                 }
@@ -725,8 +702,9 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
     }
 
     private void startCGMServices() {
-        if (service != null || isMyServiceRunning())
+        if (service != null || isMyServiceRunning()) {
             stopCGMServices();
+        }
         doBindService();
     }
 
@@ -815,7 +793,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                     } else
                         calibrationSelected = MedtronicConstants.CALIBRATION_GLUCOMETER;
                 }
-	         	/*if (calibrationSelected == MedtronicConstants.CALIBRATION_MANUAL)
+                 /*if (calibrationSelected == MedtronicConstants.CALIBRATION_MANUAL)
 	         		b4.setVisibility(View.VISIBLE);
 	             else
 	             	b4.setVisibility(View.GONE);*/
@@ -904,13 +882,8 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                 }
             }
         } catch (Exception e) {
-            StringBuffer sb1 = new StringBuffer("");
-            sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-            for (StackTraceElement st : e.getStackTrace()) {
-                sb1.append(st.toString()).append("\n");
-            }
             if (ISDEBUG) {
-                display.append(sb1.toString());
+                display.append(ExceptionUtils.getStackTrace(e));
             }
         }
     }

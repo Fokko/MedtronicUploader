@@ -10,7 +10,6 @@ import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import ch.qos.logback.classic.Logger;
 import com.nightscout.android.USB.HexDump;
 import com.nightscout.android.upload.GlucometerRecord;
 import com.nightscout.android.upload.MedtronicPumpRecord;
@@ -18,6 +17,7 @@ import com.nightscout.android.upload.MedtronicSensorRecord;
 import com.nightscout.android.upload.Record;
 import com.physicaloid.lib.Physicaloid;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -480,13 +480,7 @@ public class MedtronicReader {
                         Arrays.copyOfRange(readFromDevice, 0, read), read);
                 checkCalibrationOutOfTime();
             } catch (Exception e) {
-                StringBuffer sb1 = new StringBuffer("");
-                sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " "
-                        + e.getCause());
-                for (StackTraceElement st : e.getStackTrace()) {
-                    sb1.append(st.toString());
-                }
-                sendMessageToUI(sb1.toString(), false);
+                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
                 bufferedMessages = new ArrayList<byte[]>();
             }
         }
@@ -500,7 +494,7 @@ public class MedtronicReader {
      * @param bufferedMessages , List of parsed messages.
      */
     public String processBufferedMessages(ArrayList<byte[]> bufferedMessages) {
-        StringBuffer sResponse = new StringBuffer("");
+        StringBuffer sResponse = new StringBuffer();
         int calibrationSelectedAux = 0;
         log.info("processBufferedMessages");
         synchronized (calibrationSelected) {
@@ -794,14 +788,8 @@ public class MedtronicReader {
                     log.info("CRC ERROR!!! " + HexDump.dumpHexString(readData));
                 }
             }
-        } catch (Exception ex2) {
-            StringBuffer sb1 = new StringBuffer("");
-            sb1.append("EXCEPTION!!!!!! " + ex2.getMessage() + " "
-                    + ex2.getCause());
-            for (StackTraceElement st : ex2.getStackTrace()) {
-                sb1.append(st.toString());
-            }
-            sendMessageToUI(sb1.toString(), false);
+        } catch (Exception e) {
+            sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
         }
         SharedPreferences.Editor editor = settings.edit();
         editor.remove("last_read");
@@ -1348,8 +1336,8 @@ public class MedtronicReader {
             hGetter.wThread.isRequest = true;
             hGetter.firstReadPage = false;
             hGetter.withoutConfirmation = 0;
-			/*byte[] lastHistoricPage = HexDump.toByteArray(historicPageIndex - historicPageShift);
-			hGetter.wThread.postCommandBytes = new byte[64];
+            /*byte[] lastHistoricPage = HexDump.toByteArray(historicPageIndex - historicPageShift);
+            hGetter.wThread.postCommandBytes = new byte[64];
 			Arrays.fill(hGetter.wThread.postCommandBytes, (byte)0x00);
 			hGetter.wThread.postCommandBytes[0] = 0x04;
 			hGetter.wThread.postCommandBytes[1] = lastHistoricPage[0];
@@ -1953,12 +1941,15 @@ public class MedtronicReader {
         //log.info("processSensor  calibfactor "+ calibrationFactor+" firstMeasureByte "+firstMeasureByte);
         int currentMeasure = -1;
         float isig = 0;
-        StringBuffer sResult = new StringBuffer("");
-        if (firstMeasureByte < 0)
+        StringBuffer sResult = new StringBuffer();
+        if (firstMeasureByte < 0) {
             return "Error, I can not identify the initial byte of the sensor measure";
+        }
         int numBytes = HexDump.unsignedByte(readData[1]);
-        if (firstMeasureByte > readData.length || numBytes > readData.length || numBytes <= 0)
+        if (firstMeasureByte > readData.length || numBytes > readData.length || numBytes <= 0) {
             return "Error, I have detected an error in sensor message size";
+        }
+
         int previousCalibrationStatus = calibrationStatus;
         float previousCalibrationFactor = calibrationFactor;
         short adjustement = (short) readData[firstMeasureByte + 2];
@@ -2365,10 +2356,12 @@ public class MedtronicReader {
         boolean first = true;
         for (String id : knownDevices) {
             if (id.length() > 0) {
-                if (!first)
+                if (!first) {
                     listKnownDevices = listKnownDevices.append(",");
-                else
+                } else {
                     first = false;
+                }
+
                 listKnownDevices = listKnownDevices.append(id);
             }
         }
@@ -2380,9 +2373,9 @@ public class MedtronicReader {
     /**
      * This method calculates the date of the sensor readings
      *
-     * @param record    , current sensor reading
-     * @param initTime  , time of the first (most actual) reading in this row
-     *                  Each increment subtracts 5 minutes to "initTime"
+     * @param record   , current sensor reading
+     * @param initTime , time of the first (most actual) reading in this row
+     *                 Each increment subtracts 5 minutes to "initTime"
      */
     private void calculateDate(Record record, Date initTime, int subtract) {
         Date d = initTime;
