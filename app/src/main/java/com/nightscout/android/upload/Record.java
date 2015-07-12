@@ -18,4 +18,9 @@ public abstract class Record implements Serializable {
     public void setBGValue(String input) {
         this.bGValue = input;
     }
+
+    public String toString() {
+        final String LS = System.getProperty("line.separator");
+        return "Displaytime: " + displayTime + LS + "BG-Value: " + bGValue + LS + "Trend: " + trend + LS + "TrendArrow: " + trendArrow;
+    }
 }

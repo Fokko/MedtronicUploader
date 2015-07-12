@@ -51,11 +51,13 @@ import ch.qos.logback.classic.Logger;
 
 public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
-    private static final String TAG = "DexcomUploadHelper";
+    private static final String TAG = UploadHelper.class.getSimpleName();
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss aa", Locale.getDefault());
     private static final int SOCKET_TIMEOUT = 60 * 1000;
     private static final int CONNECTION_TIMEOUT = 30 * 1000;
     public static Boolean isModifyingRecords = false;
+
+    private static final String DEVICE_NAME = "Medtronic_CGM";
 
 
     public String dbURI = null;
@@ -118,10 +120,12 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                 recordsNotUploadedList = new ArrayList<JSONObject>();
                 recordsNotUploadedListJson = new ArrayList<JSONObject>();
                 SharedPreferences.Editor editor = settings.edit();
-                if (settings.contains("recordsNotUploaded"))
+                if (settings.contains("recordsNotUploaded")) {
                     editor.remove("recordsNotUploaded");
-                if (settings.contains("recordsNotUploadedJson"))
+                }
+                if (settings.contains("recordsNotUploadedJson")) {
                     editor.remove("recordsNotUploadedJson");
+                }
                 editor.commit();
             }
         }
@@ -164,13 +168,6 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     }
 
     /**
-     * @return constant String to identify the selected Device
-     */
-    private String getSelectedDeviceName() {
-        return "Medtronic_CGM";
-    }
-
-    /**
      * doInBackground
      */
     protected Long doInBackground(Record... records) {
@@ -195,7 +192,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                 log.info(String.format("Finished upload of %s record using a Mongo in %s ms", records.length, System.currentTimeMillis() - start));
             }
         } catch (Exception e) {
-            log.error("ERROR uploading data!!!!!", e);
+            log.error("Error uploading: " + ExceptionUtils.getStackTrace(e));
         }
 
 
@@ -486,7 +483,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
             json.put("gdValue", ((GlucometerRecord) oRecord).numGlucometerValue);
         } else if (oRecord instanceof MedtronicSensorRecord) {
             MedtronicSensorRecord record = (MedtronicSensorRecord) oRecord;
-            json.put("device", getSelectedDeviceName());
+            json.put("device", DEVICE_NAME);
             json.put("sgv", Integer.parseInt(record.bGValue));
             json.put("direction", record.trend);
             json.put("isig", record.isig);
@@ -518,7 +515,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
             json.put("gdValue", ((GlucometerRecord) oRecord).numGlucometerValue);
         } else if (oRecord instanceof MedtronicSensorRecord) {
             MedtronicSensorRecord record = (MedtronicSensorRecord) oRecord;
-            json.put("device", getSelectedDeviceName());
+            json.put("device", DEVICE_NAME);
             json.put("sgv", Integer.parseInt(record.bGValue));
             json.put("direction", record.trend);
             json.put("isig", record.isig);
@@ -649,7 +646,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                         if (oRecord instanceof Record && dexcomData != null) {
                             Record record = oRecord;
                             // make db object
-                            testData.put("device", getSelectedDeviceName());
+                            testData.put("device", DEVICE_NAME);
                             testData.put("sgv", record.bGValue);
                             testData.put("type", "sgv");
                             testData.put("direction", record.trend);
@@ -695,7 +692,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                                 glucomData.save(testData, WriteConcern.UNACKNOWLEDGED);
                             }
                             if (dexcomData != null) {
-                                testData.put("device", getSelectedDeviceName());
+                                testData.put("device", DEVICE_NAME);
                                 testData.put("type", "mbg");
                                 testData.put("mbg", gdRecord.numGlucometerValue);
                                 log.info("Uploading a Glucometer Record!");
@@ -781,7 +778,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                         if (oRecord instanceof Record) {
                             Record record = (Record) oRecord;
                             // make db object
-                            testData.put("device", getSelectedDeviceName());
+                            testData.put("device", DEVICE_NAME);
                             testData.put("sgv", record.bGValue);
                             testData.put("direction", record.trend);
                             typeSaved = 0;

@@ -147,13 +147,14 @@ public class MedtronicCGMService extends Service implements
                         log.info("reloadnotupload is online " + recordsNotUploaded.length() + " -> " + recordsNotUploadedJson.length() + " " + !isDestroying);
                         if ((recordsNotUploaded.length() > 0 || recordsNotUploadedJson.length() > 0) && !isDestroying) {
                             log.info("to upload old records");
-                            uploader = new UploadHelper(getApplicationContext(),
-                                    mClients);
+                            uploader = new UploadHelper(getApplicationContext(), mClients);
+
                             if (!isDBInitialized) {
                                 isDBInitialized = initializeDB();
                                 if (!isDBInitialized) {
-                                    if (!isDestroying)
+                                    if (!isDestroying) {
                                         mHandlerReloadLost.postDelayed(reloadLostRecords, 60000);
+                                    }
                                     return;
                                 }
                             }
@@ -180,14 +181,14 @@ public class MedtronicCGMService extends Service implements
                 }
 
             } catch (JSONException e) {
-
-                log.error("Error Reloading Lost Records");
+                log.error("Error Reloading Lost Records " + ExceptionUtils.getStackTrace(e));
                 e.printStackTrace();
             }
 
-            if (!isDestroying)
+            if (!isDestroying) {
                 mHandlerReloadLost.postDelayed(reloadLostRecords, 60000);
-            log.info("lost records reloaded from medtronic service");
+            }
+            log.info("Lost records reloaded from medtronic service");
         }
     };
     /**

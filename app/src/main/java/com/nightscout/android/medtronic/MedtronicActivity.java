@@ -56,9 +56,11 @@ import ch.qos.logback.classic.Logger;
 
 /* Main activity for the MedtronicActivity program */
 public class MedtronicActivity extends Activity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
-    //CGMs supported
-    public static final int MEDTRONIC_CGM = 1;
+
     private static final String TAG = MedtronicActivity.class.getSimpleName();
+    private static final String CACHE_FILE = "save.bin";
+
+    //CGMs supported
     private static final boolean ISDEBUG = true;
     public static int batLevel = 0;
     final Messenger mMessenger = new Messenger(new IncomingHandler());
@@ -139,8 +141,11 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                     if (usbAllowedPermission) {
                         mTitleTextView.setTextColor(Color.GREEN);
                         mTitleTextView.setText("CGM Service Started");
+
                         b1.setText("Stop Uploading CGM Data");
-                        Record auxRecord = MedtronicActivity.this.loadClassFile(new File(getBaseContext().getFilesDir(), "save.bin"));
+
+                        Record auxRecord = MedtronicActivity.this.loadClassFile(new File(getBaseContext().getFilesDir(), CACHE_FILE));
+
                         long calDate = -1;
                         try {
                             if (settings.contains("lastCalibrationDate")) {
@@ -388,8 +393,8 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
         super.onResume();
         // Refresh the status
         try {
-            Record auxRecord = MedtronicActivity.this.loadClassFile(new File(
-                    getBaseContext().getFilesDir(), "save.bin"));
+            Record auxRecord = MedtronicActivity.this.loadClassFile(new File( getBaseContext().getFilesDir(), CACHE_FILE));
+
             long calDate = -1;
             if (settings.contains("lastCalibrationDate")) {
                 calDate = settings.getLong("lastCalibrationDate", -1);
@@ -397,13 +402,15 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
             SharedPreferences prefs = PreferenceManager
                     .getDefaultSharedPreferences(getBaseContext());
 
-            DecimalFormat df = null;
-            if (prefs.getBoolean("mmolDecimals", false))
+            DecimalFormat df;
+            if (prefs.getBoolean("mmolDecimals", false)) {
                 df = new DecimalFormat("#.##");
-            else
+            }
+            else {
                 df = new DecimalFormat("#.#");
-            if (auxRecord instanceof MedtronicSensorRecord
-                    && auxRecord != null) {
+            }
+
+            if (auxRecord instanceof MedtronicSensorRecord && auxRecord != null) {
 
                 MedtronicSensorRecord record = (MedtronicSensorRecord) auxRecord;
 
@@ -497,21 +504,31 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
         return false;
     }
 
-    //Deserialize the EGVRecord (most recent) value
+    // Deserialize the most recent Record
     public Record loadClassFile(File f) {
-        ObjectInputStream ois = null;
-        try {
-            ois = new ObjectInputStream(new FileInputStream(f));
-            Object o = ois.readObject();
-            ois.close();
-            return (Record) o;
-        } catch (Exception ex) {
-            Log.w(TAG, " unable to loadEGVRecord");
+        // Only if file exists
+        if(f.exists()) {
+            ObjectInputStream ois = null;
             try {
-                if (ois != null)
-                    ois.close();
+                ois = new ObjectInputStream(new FileInputStream(f));
+                Object o = ois.readObject();
+                ois.close();
+                return (Record) o;
             } catch (Exception e) {
-                Log.e(TAG, " Error closing ObjectInputStream");
+                Log.w(TAG, "Unable to loadEGVRecord " + ExceptionUtils.getStackTrace(e));
+                try {
+                    if (ois != null)
+                        ois.close();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Error closing ObjectInputStream");
+                }
+
+                // Just delete the file if there are problems..
+                try {
+                    f.delete();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unable to delete file");
+                }
             }
         }
         return null;

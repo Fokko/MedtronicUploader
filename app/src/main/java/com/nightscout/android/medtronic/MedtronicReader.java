@@ -44,6 +44,8 @@ import ch.qos.logback.classic.Logger;
  * @author lmmarguenda
  */
 public class MedtronicReader {
+    private static final String LS = System.getProperty("line.separator");
+
     private static final String TAG = MedtronicReader.class.getSimpleName();
     public String bGValue;
     public String displayTime;
@@ -514,7 +516,7 @@ public class MedtronicReader {
                                         sResponse.append(
                                                 processPumpDataMessage(readData,
                                                         calibrationSelectedAux))
-                                                .append("\n");
+                                                .append(LS);
                                         if (lastMedtronicPumpRecord == null) {
                                             lastMedtronicPumpRecord = new MedtronicPumpRecord();
                                             calculateDate(lastMedtronicPumpRecord,
@@ -555,7 +557,7 @@ public class MedtronicReader {
                                             }
                                             sResponse
                                                     .append(processGlucometerDataMessage(readData, true))
-                                                    .append("\n");
+                                                    .append(LS);
                                             if (lastGlucometerValue > 0) {
                                                 isCalibrating = true;
                                                 if (previousRecord == null) {
@@ -605,7 +607,7 @@ public class MedtronicReader {
                                                         .copyOfRange(readData, 0,
                                                                 readData.length);
                                             }
-                                            sResponse.append("Glucomenter Deteted!! \n").append(processGlucometerDataMessage(readData, false));
+                                            sResponse.append("Glucomenter Deteted!!").append(LS).append(processGlucometerDataMessage(readData, false));
                                             sendMessageToUI("Glucometer Detected!!..Waiting 15 min. to retrieve calibration factor...", false);
                                             log.info("Glucometer Detected!!..Waiting 15 min. to retrieve calibration factor...");
                                             if (mHandlerSensorCalibration != null && getCalibrationFromSensor != null) {
@@ -643,7 +645,7 @@ public class MedtronicReader {
                                                         .copyOfRange(readData, 0,
                                                                 readData.length);
                                             }
-                                            sResponse.append("Glucomenter Deteted!! \n").append(processGlucometerDataMessage(readData, false));
+                                            sResponse.append("Glucomenter Deteted!!").append(LS).append(processGlucometerDataMessage(readData, false));
                                         }
                                         break;
                                     }
@@ -735,15 +737,14 @@ public class MedtronicReader {
                                         if (isCalibrating) {
                                             calculateCalibration = true;
                                         }
-                                        sResponse.append(
-                                                processSensorDataMessage(readData))
-                                                .append("\n");
+                                        sResponse.append(processSensorDataMessage(readData)).append(LS);
+
                                         if (calculateCalibration && !isCalibrating) {
-                                            SharedPreferences.Editor editor = settings
-                                                    .edit();
+                                            SharedPreferences.Editor editor = settings.edit();
                                             editor.putBoolean("isCalibrating", false);
                                             editor.commit();
                                         }
+
                                         sendMessageToUI("sensor data value received", false);
                                         break;
                                     default:
@@ -751,7 +752,7 @@ public class MedtronicReader {
                                         log.info("I can't understand this message");
                                         sResponse
                                                 .append("I can't process this message, no device match.")
-                                                .append("\n");
+                                                .append(LS);
                                         break;
                                 }
                             } else {
@@ -759,7 +760,7 @@ public class MedtronicReader {
                                 log.info("I don't have to listen to this message. This message comes from another source.");
                                 sResponse.append(
                                         "I don't have to listen to this. This message comes from another source.")
-                                        .append("\n");
+                                        .append(LS);
                             }
                             break;
                         case MedtronicConstants.COMMAND_ANSWER:
@@ -770,21 +771,21 @@ public class MedtronicReader {
                             break;
                         case MedtronicConstants.FILTER_COMMAND:
                             if (readData[0] == (byte) 0x13)
-                                sResponse.append("FILTER DEACTIVATED").append("\n");
+                                sResponse.append("FILTER DEACTIVATED").append(LS);
                             else
-                                sResponse.append("FILTER ACTIVATED").append("\n");
+                                sResponse.append("FILTER ACTIVATED").append(LS);
                             break;
                         default: {
                             log.info("I don't understand this message " + HexDump.toHexString(readData));
                             sResponse.append(
                                     "I don't understand the received message ")
-                                    .append("\n");
+                                    .append(LS);
                         }
                     }
                 } else {
                     sResponse.append(
                             "CRC Error ")
-                            .append("\n");
+                            .append(LS);
                     log.info("CRC ERROR!!! " + HexDump.dumpHexString(readData));
                 }
             }
@@ -1104,10 +1105,10 @@ public class MedtronicReader {
                             .unsignedByte(readData[commandByte + 3])) * 256f + (float) HexDump
                             .unsignedByte(readData[commandByte + 4])) / 100;
                     if (status == 0) {
-                        sResult = "Battery status.......: Normal\n";
+                        sResult = "Battery status.......: Normal" + LS;
                         lastMedtronicPumpRecord.batteryStatus = "Normal";
                     } else {
-                        sResult = "Battery status.......: Low\n";
+                        sResult = "Battery status.......: Low" + LS;
                         lastMedtronicPumpRecord.batteryStatus = "Low";
                     }
 
@@ -1362,10 +1363,9 @@ public class MedtronicReader {
                 page.add(hPage[j]);
                 buf = buf.append(HexDump.toHexString(hPage[j]));
             }
-            buf.append("\n");
+            buf.append(LS);
         }
         Byte[] invertedPage = page.toArray(new Byte[page.size()]);
-        //log.info("InvertedPage   \n"+buf.toString());
         readHistoricPage(invertedPage);
     }
 
@@ -1479,7 +1479,7 @@ public class MedtronicReader {
                         minute = (invertedPage[i + 2] & 0x003F);
                         hour = (invertedPage[i + 1] & 0x001F);
                         month = (((invertedPage[i + 1] >> 6) & 0x0003) << 2) + ((invertedPage[i + 2] >> 6) & 0x0003);
-                        sb.append("\n" + day + "-" + month + "-" + year + " " + hour + ":" + minute);
+                        sb.append(LS + day + "-" + month + "-" + year + " " + hour + ":" + minute);
                         datalog.numEntries++;
                         datalog.entryType[datalog.numEntries] = 0x0F;
                         cal = Calendar.getInstance();
@@ -1502,7 +1502,7 @@ public class MedtronicReader {
                         i += 7;
                         break;
                     case 0x0013:
-                        log.info("    - Basal Profile Start\n");
+                        log.info("    - Basal Profile Start" + LS);
                         i += 0;
                         break;
                     default:
@@ -1542,7 +1542,7 @@ public class MedtronicReader {
             // First drop everything before the first timestamp
             for (i = datalog.numEntries; i > 0 && datalog.entryType[i] != 0x08; i--) ;
             datalog.numEntries = i;
-            log.info("\n * Number of traceable entries: " + datalog.numEntries);
+            log.info(LS + " * Number of traceable entries: " + datalog.numEntries);
             MedtronicSensorRecord record = null;
             // Fill missing timestamps
             boolean otherPage = false;
@@ -1604,7 +1604,7 @@ public class MedtronicReader {
                 hGetter.wThread.isRequest = true;
                 hGetter.firstReadPage = true;
                 hGetter.withoutConfirmation = 1;
-				/*byte[] lastHistoricPage = HexDump.toByteArray(historicPageIndex - historicPageShift);
+                /*byte[] lastHistoricPage = HexDump.toByteArray(historicPageIndex - historicPageShift);
 				hGetter.wThread.postCommandBytes = new byte[64];
 				Arrays.fill(hGetter.wThread.postCommandBytes, (byte)0x00);
 				hGetter.wThread.postCommandBytes[0] = 0x04;
@@ -1722,17 +1722,20 @@ public class MedtronicReader {
     /**
      * This method process the Manual Calibration message
      *
-     * @param readData
      * @return String, for debug or notification purposes
      */
     public String processManualCalibrationDataMessage(float value, boolean instant) {
+
         float mult = 1f;
-        if (prefs.getBoolean("mmolxl", false))
+        if (prefs.getBoolean("mmolxl", false)) {
             mult = 18f;
+        }
+
         float num = value * mult;
         lastGlucometerRecord = new GlucometerRecord();
         lastGlucometerRecord.numGlucometerValue = num;
         lastGlucometerValue = num;
+
         Date d = new Date();
         lastGlucometerRecord.lastDate = d.getTime();
         lastGlucometerDate = d.getTime();
@@ -1798,24 +1801,24 @@ public class MedtronicReader {
      * @param currentTime
      */
     private void calibratingBackwards(float previousCalibrationFactor,
-                                      int previousCalibrationStatus, float isig,
-                                      MedtronicSensorRecord record, int added, Date currentTime) {
+                                      int previousCalibrationStatus,
+                                      float isig,
+                                      MedtronicSensorRecord record,
+                                      int added,
+                                      Date currentTime) {
         List<Record> auxList = null;
         synchronized (lastRecordsInMemory) {
             auxList = lastRecordsInMemory.getListFromTail(2);
         }
         if (previousCalibrationFactor > 0) {
+            record.setUnfilteredGlucose(isig * previousCalibrationFactor);
+            record.setBGValue((applyFilterToRecord(record, auxList)) + "");
+            record.isCalibrating = false;
+            record.calibrationFactor = previousCalibrationFactor;
+
             if (previousCalibrationStatus != MedtronicConstants.WITHOUT_ANY_CALIBRATION) {
-                record.setUnfilteredGlucose(isig * previousCalibrationFactor);
-                record.setBGValue((applyFilterToRecord(record, auxList)) + "");
-                record.isCalibrating = false;
-                record.calibrationFactor = previousCalibrationFactor;
                 record.calibrationStatus = previousCalibrationStatus;
             } else {
-                record.setUnfilteredGlucose(isig * previousCalibrationFactor);
-                record.setBGValue((applyFilterToRecord(record, auxList)) + "");
-                record.isCalibrating = false;
-                record.calibrationFactor = previousCalibrationFactor;
                 record.calibrationStatus = MedtronicConstants.LAST_CALIBRATION_FAILED_USING_PREVIOUS;
             }
         }
