@@ -73,17 +73,31 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="Sharing">
         <com.nightscout.android.utils.CustomSwitchPreference
+            android:key="EnableMQTTUpload"
             android:disableDependentsState="false"
-            android:key="EnableRESTUpload"
-            android:summary="The REST API is an alternative to direct mongodb upload"
-            android:title="API Upload (REST)"></com.nightscout.android.utils.CustomSwitchPreference>
+            android:summary="Upload using the MQTT Message queue"
+            android:title="MQTT Upload"></com.nightscout.android.utils.CustomSwitchPreference>
         <EditTextPreference
+            android:key="MQTT Broker location"
+            android:defaultValue="tcp://{YOUR-MQTT-SERVER}:1883"
+            android:dependency="EnableMQTTUpload"
+            android:dialogMessage="The localtion of the MQTT broker, the uploader will automatically subscribe to the topics."
+            android:dialogTitle="Enter the address of the broker"
+            android:title="MQTT Broker location"></EditTextPreference>
+
+        <com.nightscout.android.utils.CustomSwitchPreference
+            android:key="EnableRESTUpload"
+            android:disableDependentsState="false"
+            android:summary="The REST API is an alternative to direct mongodb upload"
+            android:title="REST Upload"></com.nightscout.android.utils.CustomSwitchPreference>
+        <EditTextPreference
+            android:key="API Base URL"
             android:defaultValue="http://{YOUR-API-SERVER}/api"
             android:dependency="EnableRESTUpload"
             android:dialogMessage="This only the base URL, the uploader will automatically append /entries for the POST of CGM data and /gdentries for the POST of glucometer data values"
             android:dialogTitle="Enter Base API URL"
-            android:key="API Base URL"
             android:title="API Base URL"></EditTextPreference>
+
         <com.nightscout.android.utils.CustomSwitchPreference
             android:disableDependentsState="false"
             android:key="EnableMongoUpload"

@@ -33,10 +33,20 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.hawtbuf.UTF8Buffer;
+import org.fusesource.mqtt.client.Callback;
+import org.fusesource.mqtt.client.CallbackConnection;
+import org.fusesource.mqtt.client.Future;
+import org.fusesource.mqtt.client.FutureConnection;
+import org.fusesource.mqtt.client.Listener;
+import org.fusesource.mqtt.client.MQTT;
+import org.fusesource.mqtt.client.QoS;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
 
+import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -49,6 +59,7 @@ import java.util.Locale;
 
 import ch.qos.logback.classic.Logger;
 
+// TODO: Split REST, MQTT and MongoDB
 public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
     private static final String TAG = UploadHelper.class.getSimpleName();
@@ -59,17 +70,18 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
     private static final String DEVICE_NAME = "Medtronic_CGM";
 
-
     public String dbURI = null;
     public String collectionName = null;
     public String dsCollectionName = null;
     public String gdCollectionName = null;
     public String devicesCollectionName = "devices";
+
     public DB db = null;
     public DBCollection dexcomData = null;
     public DBCollection glucomData = null;
     public DBCollection deviceData = null;
     public DBCollection dsCollection = null;
+
     Context context;
     private Logger log = (Logger) LoggerFactory.getLogger(MedtronicReader.class.getName());
     private SharedPreferences settings = null;// common application preferences
@@ -170,21 +182,26 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     /**
      * doInBackground
      */
-    protected Long doInBackground(Record... records) {
+    protected Long doInBackground(Record[] records) {
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this.context);
         Boolean enableRESTUpload = prefs.getBoolean("EnableRESTUpload", false);
         Boolean enableMongoUpload = prefs.getBoolean("EnableMongoUpload", false);
         try {
+            long start = System.currentTimeMillis();
             if (enableRESTUpload) {
-                long start = System.currentTimeMillis();
+                Log.i(TAG, String.format("Starting upload of %s record using MQTT", records.length));
+                log.info(String.format("Starting upload of %s record using MQTT", records.length));
+                doMQTTUpload(prefs, records);
+                Log.i(TAG, String.format("Finished upload of %s record using a MQTT in %s ms", records.length, System.currentTimeMillis() - start));
+                log.info(String.format("Finished upload of %s record using a MQTT in %s ms", records.length, System.currentTimeMillis() - start));
+            } else if (enableRESTUpload) {
                 Log.i(TAG, String.format("Starting upload of %s record using a REST API", records.length));
                 log.info(String.format("Starting upload of %s record using a REST API", records.length));
                 doRESTUpload(prefs, records);
                 Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", records.length, System.currentTimeMillis() - start));
                 log.info(String.format("Finished upload of %s record using a REST API in %s ms", records.length, System.currentTimeMillis() - start));
             } else if (enableMongoUpload) {
-                long start = System.currentTimeMillis();
                 Log.i(TAG, String.format("Starting upload of %s record using Mongo", records.length));
                 log.info(String.format("Starting upload of %s record using Mongo " + dbURI, records.length));
                 doMongoUpload(prefs, records);
@@ -199,6 +216,70 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
         return 1L;
     }
 
+    private void doMQTTUpload(SharedPreferences prefs, Record[] records) {
+        String baseURLSetting = prefs.getString("MQTT Broker location", "");
+        try {
+            doMQTTUploadTo(baseURLSetting, records);
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to do REST API Upload to: " + baseURLSetting, e);
+            log.error("Unable to do REST API Upload to: " + baseURLSetting, e);
+        }
+    }
+
+    private void doMQTTUploadTo(String baseURI, Record[] records) {
+
+        MQTT mqtt = new MQTT();
+        try {
+            mqtt.setHost(baseURI);
+            FutureConnection connection = mqtt.futureConnection();
+
+            if (recordsNotUploadedListJson.size() > 0) {
+                // TODO: Implement this later
+            }
+
+            for (Record record : records) {
+
+                final int typeSaved;
+                final String topic;
+                if (record instanceof GlucometerRecord) {
+                    typeSaved = 2;
+                    topic = "/downloads/protobuf";
+                } else if (record instanceof MedtronicPumpRecord) {
+                    typeSaved = 3;
+                    topic = "/downloads/protobuf";
+                } else {
+                    typeSaved = 0;
+                    topic = "/downloads/protobuf";
+                }
+
+                JSONObject json = new JSONObject();
+                try {
+                    populateV1APIEntry(json, record);
+                } catch (Exception e) {
+                    Log.w(TAG, "Unable to populate entry: " + ExceptionUtils.getStackTrace(e));
+                    continue;
+                }
+
+                String jsonString = json.toString();
+
+                Log.i(TAG, "JSON: " + jsonString);
+                log.info("JSON: " + jsonString);
+
+                try {
+                    connection.publish(topic, jsonString.getBytes(), QoS.AT_LEAST_ONCE, false);
+
+                } catch (Exception e) {
+                    Log.w(TAG, "Unable to publish to MQTT: " + ExceptionUtils.getStackTrace(e));
+                    log.warn("Unable to publish to MQTT: " + ExceptionUtils.getStackTrace(e));
+                }
+            }
+        } catch (URISyntaxException e) {
+            String err = "Unable to send the data using MQTT: " + ExceptionUtils.getStackTrace(e);
+            Log.e(TAG, err);
+            log.error(err);
+        }
+    }
+
     protected void onPostExecute(Long result) {
         super.onPostExecute(result);
         Log.i(TAG, "Post execute, Result: " + result + ", Status: FINISHED");
@@ -206,15 +287,16 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
     }
 
-    private void doRESTUpload(SharedPreferences prefs, Record... records) {
+    private void doRESTUpload(SharedPreferences prefs, Record[] records) {
         String baseURLSettings = prefs.getString("API Base URL", "");
         ArrayList<String> baseURIs = new ArrayList<String>();
 
         try {
             for (String baseURLSetting : baseURLSettings.split(" ")) {
                 String baseURL = baseURLSetting.trim();
-                if (baseURL.isEmpty()) continue;
-                baseURIs.add(baseURL + (baseURL.endsWith("/") ? "" : "/"));
+                if (baseURL.isEmpty()) {
+                    baseURIs.add(baseURL + (baseURL.endsWith("/") ? "" : "/"));
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Unable to process API Base URL setting: " + baseURLSettings, e);
@@ -538,13 +620,14 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
     }
 
-    private void doMongoUpload(SharedPreferences prefs, Record... records) {
+    private void doMongoUpload(SharedPreferences prefs, Record[] records) {
         Integer typeSaved = null;
         boolean recordsTry = false;
         if (dbURI != null) {
             DBCursor cursor = null;
             BasicDBObject testData = new BasicDBObject();
             try {
+                // TODO: This connection building should be done different
                 // connect to db
                 MongoClientOptions.Builder b = MongoClientOptions.builder();
                 b.heartbeatConnectTimeout(60000);
@@ -596,8 +679,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                 }
 
                 if (recordsNotUploadedList.size() > 0) {
-                    Log.i(TAG, "The number of not uploaded EGV records to retry " + recordsNotUploadedList.size());
-                    log.warn("The number of not uploaded EGV records to retry " + recordsNotUploadedList.size());
+                    Log.i(TAG, "The number of not uploaded records to retry " + recordsNotUploadedList.size());
+                    log.warn("The number of not uploaded records to retry " + recordsNotUploadedList.size());
                     List<JSONObject> auxList = new ArrayList<JSONObject>(recordsNotUploadedList);
                     recordsNotUploadedList = new ArrayList<JSONObject>();
                     for (int i = 0; i < auxList.size(); i++) {
@@ -618,10 +701,10 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                                 if (atLeastOne)
                                     dexcomData.save(testData, WriteConcern.UNACKNOWLEDGED);
                             }
-                        } catch (IllegalArgumentException ex) {
-                            Log.e("UploaderHelper", "Illegal record");
+                        } catch (IllegalArgumentException e) {
+                            Log.e("UploaderHelper", "Illegal record: " + ExceptionUtils.getStackTrace(e));
                         } catch (Exception e) {
-                            Log.e("UploaderHelper", "The retried can't be uploaded");
+                            Log.e("UploaderHelper", "The retried can't be uploaded: " + ExceptionUtils.getStackTrace(e));
                             log.error("The retried record can't be uploaded ", e);
                             if (recordsNotUploadedList.size() > 49) {
                                 recordsNotUploadedList.remove(0);
@@ -632,8 +715,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                         }
                     }
                 }
-                Log.i(TAG, "The number of EGV records being sent to MongoDB is " + records.length);
-                log.info("The number of EGV records being sent to MongoDB is " + records.length);
+                Log.i(TAG, "The number of Records being sent to MongoDB is " + records.length);
+                log.info("The number of Records being sent to MongoDB is " + records.length);
                 Boolean isWarmingUp = false;
                 for (Record oRecord : records) {
                     recordsTry = true;
@@ -681,7 +764,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                                     }
                                 }
                             }
-                            log.info("Uploading a EGVRecord");
+                            log.info("Uploading a  Record");
                             dexcomData.save(testData, WriteConcern.UNACKNOWLEDGED);
                         } else if (oRecord instanceof GlucometerRecord && (glucomData != null || dexcomData != null)) {
                             typeSaved = 2;
@@ -726,21 +809,23 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                                 log.info("Uploading a DeviceRecord");
                                 deviceData.save(testData, WriteConcern.UNACKNOWLEDGED);
                             }
-                            if (cursor != null)
+                            if (cursor != null) {
                                 cursor.close();
+                            }
                         }
-                    } catch (IllegalArgumentException ex) {
-                        Log.e("UploaderHelper", "Illegal record");
-                        if (cursor != null)
+                    } catch (IllegalArgumentException e) {
+                        Log.e("UploaderHelper", "Illegal record: " + ExceptionUtils.getStackTrace(e));
+                        if (cursor != null) {
                             cursor.close();
-                    } catch (Exception ex2) {
+                        }
+                    } catch (Exception e) {
                         if (cursor != null)
                             cursor.close();
                         if ((typeSaved != null && (typeSaved == 0 || typeSaved == 1))) {//Only EGV records are important enough.
                             if (isWarmingUp) {
                                 prefs.edit().putBoolean("isCheckedWUP", false);
                             }
-                            log.warn("added to records not uploaded");
+                            log.warn("Added to records not uploaded");
                             if (recordsNotUploadedList.size() > 49) {
                                 recordsNotUploadedList.remove(0);
                                 recordsNotUploadedList.add(49, new JSONObject(testData.toMap()));
@@ -750,8 +835,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                         } else if (typeSaved == 3) {
                             prefs.edit().putBoolean("isWarmingUp", isWarmingUp);
                         }
-                        Log.w(TAG, "Unable to upload data to mongo in loop");
-                        log.warn("Unable to upload data to mongo in loop");
+                        Log.w(TAG, "Unable to upload data to mongo in loop " + ExceptionUtils.getStackTrace(e));
+                        log.warn("Unable to upload data to mongo in loop" + ExceptionUtils.getStackTrace(e));
                     }
                 }
             } catch (Exception e) {
@@ -800,12 +885,10 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                                 recordsNotUploadedList.add(new JSONObject(testData.toMap()));
                             }
                         }
-
                     }
                 }
-
-                Log.e(TAG, "Unable to upload data to mongo", e);
-                log.error("Unable to upload data to mongo", e);
+                Log.e(TAG, "Unable to upload data to mongo: " + ExceptionUtils.getStackTrace(e));
+                log.error("Unable to upload data to mongo: " + ExceptionUtils.getStackTrace(e));
                 sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
             }
             try {
