@@ -1521,8 +1521,7 @@ public class MedtronicReader {
                 datalog.glucose[datalog.numEntries] = glucoseVal;
             }
         }
-        historicPageShift++;
-        hGetter.shift = historicPageShift;
+        hGetter.shift = ++historicPageShift;
         Date d = new Date();
 
         long lastRecordTime = 0;
