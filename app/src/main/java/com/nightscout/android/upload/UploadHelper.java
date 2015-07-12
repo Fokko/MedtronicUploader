@@ -17,8 +17,6 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.nightscout.android.medtronic.MedtronicActivity;
 import com.nightscout.android.medtronic.MedtronicConstants;
@@ -33,13 +31,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.hawtbuf.UTF8Buffer;
-import org.fusesource.mqtt.client.Callback;
-import org.fusesource.mqtt.client.CallbackConnection;
-import org.fusesource.mqtt.client.Future;
 import org.fusesource.mqtt.client.FutureConnection;
-import org.fusesource.mqtt.client.Listener;
 import org.fusesource.mqtt.client.MQTT;
 import org.fusesource.mqtt.client.QoS;
 import org.json.JSONArray;
@@ -626,58 +618,15 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
         if (dbURI != null) {
             DBCursor cursor = null;
             BasicDBObject testData = new BasicDBObject();
+
+            MongoClientOptions.Builder b = MongoClientOptions.builder();
+            b.heartbeatConnectTimeout(60000);
+            b.heartbeatSocketTimeout(60000);
+            b.maxWaitTime(60000);
+
+            client = new MongoClient(dbURI, b.build());
+
             try {
-                // TODO: This connection building should be done different
-                // connect to db
-                MongoClientOptions.Builder b = MongoClientOptions.builder();
-                b.heartbeatConnectTimeout(60000);
-                b.heartbeatSocketTimeout(60000);
-                b.maxWaitTime(60000);
-                boolean bAchieved = false;
-                String user = "";
-                String password = "";
-                String source = "";
-                String host = "";
-                String port = "";
-                int iPort = -1;
-                if (dbURI.length() > 0) {
-                    String[] splitted = dbURI.split(":");
-                    if (splitted.length >= 4) {
-                        user = splitted[1].substring(2);
-                        if (splitted[2].indexOf("@") < 0)
-                            bAchieved = false;
-                        else {
-                            password = splitted[2].substring(0, splitted[2].indexOf("@"));
-                            host = splitted[2].substring(splitted[2].indexOf("@") + 1, splitted[2].length());
-                            if (splitted[3].indexOf("/") < 0)
-                                bAchieved = false;
-                            else {
-                                port = splitted[3].substring(0, splitted[3].indexOf("/"));
-                                source = splitted[3].substring(splitted[3].indexOf("/") + 1, splitted[3].length());
-                                try {
-                                    iPort = Integer.parseInt(port);
-                                } catch (Exception ne) {
-                                    iPort = -1;
-                                }
-                                if (iPort > -1)
-                                    bAchieved = true;
-                            }
-                        }
-                    }
-                }
-                log.debug("Uri TO CHANGE user " + user + " host " + source + " password " + password);
-                if (bAchieved) {
-                    log.debug("URI CHANGE Achieved");
-                    MongoCredential mc = MongoCredential.createMongoCRCredential(user, source, password.toCharArray());
-                    ServerAddress sa = new ServerAddress(host, iPort);
-                    List<MongoCredential> lcredential = new ArrayList<MongoCredential>();
-                    lcredential.add(mc);
-                    if (sa != null && sa.getHost() != null && sa.getHost().indexOf("localhost") < 0) {
-                        client = new MongoClient(sa, lcredential, b.build());
-
-                    }
-                }
-
                 if (recordsNotUploadedList.size() > 0) {
                     Log.i(TAG, "The number of not uploaded records to retry " + recordsNotUploadedList.size());
                     log.warn("The number of not uploaded records to retry " + recordsNotUploadedList.size());
