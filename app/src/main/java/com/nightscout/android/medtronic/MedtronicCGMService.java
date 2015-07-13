@@ -71,16 +71,7 @@ public class MedtronicCGMService extends Service implements
     private NotificationManager NM;
     private boolean listenerAttached = false;
     private UploadHelper uploader;
-    private String dbURI = null;
-    private String collectionName = null;
-    private String dsCollectionName = null;
-    private String gdCollectionName = null;
-    private String devicesCollectionName = "devices";
-    private DB db = null;
-    private DBCollection dexcomData = null;
-    private DBCollection glucomData = null;
-    private DBCollection deviceData = null;
-    private MongoClient client = null;
+
     private DBCollection dsCollection = null;
     private Physicaloid mSerial;
     private Handler mHandlerCheckSerial = new Handler();// This handler runs readAndUpload Runnable which checks the USB device and NET connection.
@@ -107,7 +98,7 @@ public class MedtronicCGMService extends Service implements
     private boolean connectedSent = false;
     private boolean isDestroying = false;
     private Boolean isUploading = false;
-    private boolean isDBInitialized = false;
+
     private HistoricGetterThread hGetter = null;//Medtronic Historic Log retriever
     private long historicLogPeriod = 0;
     private ReadByListener readByListener = new ReadByListener();//Listener to read data
@@ -147,27 +138,7 @@ public class MedtronicCGMService extends Service implements
                         log.info("reloadnotupload is online " + recordsNotUploaded.length() + " -> " + recordsNotUploadedJson.length() + " " + !isDestroying);
                         if ((recordsNotUploaded.length() > 0 || recordsNotUploadedJson.length() > 0) && !isDestroying) {
                             log.info("to upload old records");
-                            uploader = new UploadHelper(getApplicationContext(), mClients);
-
-                            if (!isDBInitialized) {
-                                isDBInitialized = initializeDB();
-                                if (!isDBInitialized) {
-                                    if (!isDestroying) {
-                                        mHandlerReloadLost.postDelayed(reloadLostRecords, 60000);
-                                    }
-                                    return;
-                                }
-                            }
-                            uploader.dbURI = dbURI;
-                            uploader.collectionName = collectionName;
-                            uploader.dsCollectionName = dsCollectionName;
-                            uploader.gdCollectionName = gdCollectionName;
-                            uploader.devicesCollectionName = devicesCollectionName;
-                            uploader.db = db;
-                            uploader.dexcomData = dexcomData;
-                            uploader.glucomData = glucomData;
-                            uploader.deviceData = deviceData;
-                            uploader.dsCollection = dsCollection;
+                            uploader = new UploadHelper(getApplicationContext());
 
                             Record[] params = new Record[0];
                             log.info("calling uploader");
@@ -682,97 +653,6 @@ public class MedtronicCGMService extends Service implements
     }
 
     /**
-     * This method initializes only one instance of mongo db (It would be better use something like Google guice but ...)
-     *
-     * @return DB initialized successfully
-     */
-    private boolean initializeDB() {
-        dbURI = prefs.getString("MongoDB URI", null);
-        collectionName = prefs.getString("Collection Name", "entries");
-        dsCollectionName = prefs.getString("DeviceStatus Collection Name", "devicestatus");
-        gdCollectionName = prefs.getString("gcdCollectionName", null);
-        devicesCollectionName = "devices";
-        db = null;
-        if (dbURI != null) {
-            log.info("URI != null");
-
-            try {
-
-                // connect to db
-                MongoClientURI uri = new MongoClientURI(dbURI.trim());
-                Builder b = MongoClientOptions.builder();
-                b.heartbeatConnectTimeout(60000);
-                b.heartbeatSocketTimeout(60000);
-                b.maxWaitTime(60000);
-                boolean bAchieved = false;
-                String user = "";
-                String password = "";
-                String source = "";
-                String host = "";
-                String port = "";
-                int iPort = -1;
-                if (dbURI.length() > 0) {
-                    String[] splitted = dbURI.split(":");
-                    if (splitted.length >= 4) {
-                        user = splitted[1].substring(2);
-                        if (splitted[2].indexOf("@") < 0)
-                            bAchieved = false;
-                        else {
-                            password = splitted[2].substring(0, splitted[2].indexOf("@"));
-                            host = splitted[2].substring(splitted[2].indexOf("@") + 1, splitted[2].length());
-                            if (splitted[3].indexOf("/") < 0)
-                                bAchieved = false;
-                            else {
-                                port = splitted[3].substring(0, splitted[3].indexOf("/"));
-                                source = splitted[3].substring(splitted[3].indexOf("/") + 1, splitted[3].length());
-                                try {
-                                    iPort = Integer.parseInt(port);
-                                } catch (Exception ne) {
-                                    iPort = -1;
-                                }
-                                if (iPort > -1)
-                                    bAchieved = true;
-                            }
-                        }
-                    }
-                }
-                log.info("Uri TO CHANGE user " + user + " host " + source + " password " + password);
-                if (bAchieved) {
-                    MongoCredential mc = MongoCredential.createMongoCRCredential(user, source, password.toCharArray());
-                    ServerAddress sa = new ServerAddress(host, iPort);
-                    List<MongoCredential> lcredential = new ArrayList<MongoCredential>();
-                    lcredential.add(mc);
-                    if (sa != null && sa.getHost() != null && sa.getHost().indexOf("localhost") < 0) {
-                        client = new MongoClient(sa, lcredential, b.build());
-                    }
-                }
-                // get db
-                db = client.getDB(uri.getDatabase());
-
-
-                // get collection
-                dexcomData = null;
-                glucomData = null;
-                deviceData = db.getCollection(devicesCollectionName);
-                if (deviceData == null)
-                    deviceData = db.createCollection("device", null);
-                if (collectionName != null)
-                    dexcomData = db.getCollection(collectionName.trim());
-                if (gdCollectionName != null)
-                    glucomData = db.getCollection(gdCollectionName.trim());
-                dsCollection = db.getCollection(dsCollectionName);
-                if (dsCollection == null)
-                    dsCollection = db.createCollection("devicestatus", null);
-            } catch (Exception e) {
-                log.error("EXCEPTION INIT", e);
-                return false;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Sends a message to be printed in the display (DEBUG) or launches a pop-up message.
      *
      * @param valuetosend
@@ -1271,9 +1151,6 @@ public class MedtronicCGMService extends Service implements
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                           String key) {
         try {
-            if (key.equalsIgnoreCase("EnableMongoUpload") || key.equalsIgnoreCase("MongoDB URI") || key.equalsIgnoreCase("Collection Name") || key.equalsIgnoreCase("gcdCollectionName")) {
-                isDBInitialized = false;
-            }
             if (key.equalsIgnoreCase("logLevel")) {
                 String level = sharedPreferences.getString("logLevel", "1");
                 if ("2".equalsIgnoreCase(level))
@@ -1777,39 +1654,18 @@ public class MedtronicCGMService extends Service implements
                     }
                     if (params.length > 0) {
                         synchronized (mHandlerReloadLost) {
-                            uploader = new UploadHelper(getApplicationContext(),
-                                    mClients);
-                            if (!isDBInitialized) {
-                                isDBInitialized = initializeDB();
-                            }
-                            uploader.dbURI = dbURI;
-                            uploader.collectionName = collectionName;
-                            uploader.dsCollectionName = dsCollectionName;
-                            uploader.gdCollectionName = gdCollectionName;
-                            uploader.devicesCollectionName = devicesCollectionName;
-                            uploader.db = db;
-                            uploader.dexcomData = dexcomData;
-                            uploader.glucomData = glucomData;
-                            uploader.deviceData = deviceData;
-                            uploader.dsCollection = dsCollection;
-
+                            uploader = new UploadHelper(getApplicationContext());
                             uploader.execute(params);
                         }
                     }
-                    params = null;
+
 
                     listToUpload.clear();
                     if (prefs.getBoolean("EnableWifiHack", false)) {
                         doWifiHack();
                     }
                 } catch (Exception e) {
-                    StringBuffer sb1 = new StringBuffer("");
-                    sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " "
-                            + e.getCause());
-                    for (StackTraceElement st : e.getStackTrace()) {
-                        sb1.append(st.toString()).append("\n");
-                    }
-                    sendMessageToUI(sb1.toString() + "\n " + sResult, false);
+                    sendMessageToUI(ExceptionUtils.getStackTrace(e) + "\n " + sResult, false);
                 }
             }
             log.info("Buffered Messages Processed ");
