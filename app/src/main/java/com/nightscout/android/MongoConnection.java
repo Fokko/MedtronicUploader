@@ -59,10 +59,6 @@ public class MongoConnection {
 
     private static MongoConnection instance = null;
 
-    protected MongoConnection() {
-        this(null);
-    }
-
     private static final int TIMEOUT = 60000;
 
     protected MongoConnection(SharedPreferences prefs) {
@@ -70,6 +66,8 @@ public class MongoConnection {
         String dbUsername = prefs.getString(MONGO_USERNAME_KEY, null);
         String dbPassword = prefs.getString(MONGO_PASSWORD_KEY, null);
         String dbDatabase = prefs.getString(MONGO_DATABASE_KEY, null);
+
+        Log.e(TAG, " Connecting to mongodb://" + MONGO_USERNAME_KEY + ":" + MONGO_PASSWORD_KEY + "@" + MONGO_URI_KEY + "/" + MONGO_DATABASE_KEY);
 
         MongoClientOptions.Builder options = MongoClientOptions.builder();
         options.heartbeatConnectTimeout(TIMEOUT);
