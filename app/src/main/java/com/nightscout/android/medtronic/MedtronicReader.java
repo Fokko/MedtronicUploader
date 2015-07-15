@@ -663,6 +663,7 @@ public class MedtronicReader {
                                         calibrationStatus = MedtronicConstants.WITHOUT_ANY_CALIBRATION;
                                         editor.putInt("calibrationStatus", MedtronicConstants.WITHOUT_ANY_CALIBRATION);
                                         editor.remove("calibrationFactor");
+
                                         log.info("remove lastCalibrationDate");
                                         editor.remove("lastCalibrationDate");
                                         editor.remove("lastGlucometerValue");
@@ -699,15 +700,15 @@ public class MedtronicReader {
                                         break;
                                     }
                                     case MedtronicConstants.MEDTRONIC_SENSOR2:
-
-                                        if (lastMedtronicPumpRecord != null)
+                                        if (lastMedtronicPumpRecord != null) {
                                             lastMedtronicPumpRecord.isWarmingUp = false;
+                                        }
+
                                         if (prefs.getString("glucSrcTypes", "1").equals("2")) {
                                             if (prefs.getBoolean("isWarmingUp", false)) {
                                                 if (lastMedtronicPumpRecord == null) {
                                                     lastMedtronicPumpRecord = new MedtronicPumpRecord();
-                                                    calculateDate(lastMedtronicPumpRecord,
-                                                            new Date(), 0);
+                                                    this.calculateDate(lastMedtronicPumpRecord, new Date(), 0);
                                                     lastMedtronicPumpRecord.deviceId = prefs.getString("medtronic_cgm_id", "");
                                                 }
                                                 lastMedtronicPumpRecord.isWarmingUp = false;
@@ -718,18 +719,16 @@ public class MedtronicReader {
                                             log.info("Sensor value received, but value is took only by pump logs");
                                             break;
                                         }
-                                        Log.i("MEdtronic", "process sensor2");
+                                        Log.i("Medtronic", "process sensor2");
                                         log.info("SENSOR DATA RECEIVED");
                                         if (prefs.getBoolean("isWarmingUp", false)) {
                                             if (lastMedtronicPumpRecord == null) {
                                                 lastMedtronicPumpRecord = new MedtronicPumpRecord();
-                                                calculateDate(lastMedtronicPumpRecord,
-                                                        new Date(), 0);
+                                                calculateDate(lastMedtronicPumpRecord, new Date(), 0);
                                                 lastMedtronicPumpRecord.deviceId = prefs.getString("medtronic_cgm_id", "");
                                             }
                                             lastMedtronicPumpRecord.isWarmingUp = false;
-                                            SharedPreferences.Editor editor = prefs
-                                                    .edit();
+                                            SharedPreferences.Editor editor = prefs.edit();
                                             editor.remove("isWarmingUp");
                                             editor.commit();
                                         }
@@ -745,7 +744,7 @@ public class MedtronicReader {
                                             editor.commit();
                                         }
 
-                                        sendMessageToUI("sensor data value received", false);
+                                        sendMessageToUI("Sensor data value received", false);
                                         break;
                                     default:
                                         Log.i("MEdtronic", "No Match");
@@ -770,22 +769,19 @@ public class MedtronicReader {
                             }
                             break;
                         case MedtronicConstants.FILTER_COMMAND:
-                            if (readData[0] == (byte) 0x13)
+                            if (readData[0] == (byte) 0x13) {
                                 sResponse.append("FILTER DEACTIVATED").append(LS);
-                            else
+                            } else {
                                 sResponse.append("FILTER ACTIVATED").append(LS);
+                            }
                             break;
                         default: {
                             log.info("I don't understand this message " + HexDump.toHexString(readData));
-                            sResponse.append(
-                                    "I don't understand the received message ")
-                                    .append(LS);
+                            sResponse.append("I don't understand the received message ").append(LS);
                         }
                     }
                 } else {
-                    sResponse.append(
-                            "CRC Error ")
-                            .append(LS);
+                    sResponse.append("CRC Error").append(LS);
                     log.info("CRC ERROR!!! " + HexDump.dumpHexString(readData));
                 }
             }
@@ -1604,7 +1600,7 @@ public class MedtronicReader {
                 hGetter.firstReadPage = true;
                 hGetter.withoutConfirmation = 1;
                 /*byte[] lastHistoricPage = HexDump.toByteArray(historicPageIndex - historicPageShift);
-				hGetter.wThread.postCommandBytes = new byte[64];
+                hGetter.wThread.postCommandBytes = new byte[64];
 				Arrays.fill(hGetter.wThread.postCommandBytes, (byte)0x00);
 				hGetter.wThread.postCommandBytes[0] = 0x04;
 				hGetter.wThread.postCommandBytes[1] = lastHistoricPage[0];

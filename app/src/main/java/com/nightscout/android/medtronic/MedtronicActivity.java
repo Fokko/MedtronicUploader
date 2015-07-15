@@ -393,7 +393,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
         super.onResume();
         // Refresh the status
         try {
-            Record auxRecord = MedtronicActivity.this.loadClassFile(new File( getBaseContext().getFilesDir(), CACHE_FILE));
+            Record auxRecord = MedtronicActivity.this.loadClassFile(new File(getBaseContext().getFilesDir(), CACHE_FILE));
 
             long calDate = -1;
             if (settings.contains("lastCalibrationDate")) {
@@ -405,8 +405,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
             DecimalFormat df;
             if (prefs.getBoolean("mmolDecimals", false)) {
                 df = new DecimalFormat("#.##");
-            }
-            else {
+            } else {
                 df = new DecimalFormat("#.#");
             }
 
@@ -507,7 +506,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
     // Deserialize the most recent Record
     public Record loadClassFile(File f) {
         // Only if file exists
-        if(f.exists()) {
+        if (f.exists()) {
             ObjectInputStream ois = null;
             try {
                 ois = new ObjectInputStream(new FileInputStream(f));
@@ -811,7 +810,7 @@ public class MedtronicActivity extends Activity implements OnSharedPreferenceCha
                         calibrationSelected = MedtronicConstants.CALIBRATION_GLUCOMETER;
                 }
                  /*if (calibrationSelected == MedtronicConstants.CALIBRATION_MANUAL)
-	         		b4.setVisibility(View.VISIBLE);
+                     b4.setVisibility(View.VISIBLE);
 	             else
 	             	b4.setVisibility(View.GONE);*/
                 if (menu != null) {

@@ -104,24 +104,33 @@
             android:summary="If you're using MongoLab and Azure this should be enabled"
             android:title="MongoDB Upload"></com.nightscout.android.utils.CustomSwitchPreference>
         <EditTextPreference
-            android:defaultValue="mongodb://{user}:{password}@{host}.mongolab.com:{11111}/{database}"
+            android:defaultValue="{host}.mongolab.com:{11111}"
             android:dependency="EnableMongoUpload"
-            android:dialogMessage="Replace example values in {}'s with your correct values"
-            android:dialogTitle="Enter MongoDB URI"
+            android:dialogTitle="Enter MongoDB location"
             android:key="MongoDB URI"
             android:title="MongoDB URI"></EditTextPreference>
+
         <EditTextPreference
+            android:defaultValue=""
             android:dependency="EnableMongoUpload"
-            android:dialogMessage="This is the name of the collection where the CGM data will be stored"
-            android:dialogTitle="Enter Collection Name"
-            android:key="Collection Name"
-            android:title="Collection Name"></EditTextPreference>
+            android:dialogTitle="Enter MongoDB Username"
+            android:key="MongoDB Username"
+            android:title="MongoDB Username"></EditTextPreference>
+
         <EditTextPreference
+            android:defaultValue=""
             android:dependency="EnableMongoUpload"
-            android:dialogMessage="This is the name of the collection where the glucometer data will be stored"
-            android:dialogTitle="Enter Collection Name"
-            android:key="gcdCollectionName"
-            android:title="Glucometer Data Collection Name"></EditTextPreference>
+            android:dialogTitle="Enter MongoDB Password"
+            android:key="MongoDB Password"
+            android:title="MongoDB Password"></EditTextPreference>
+
+        <EditTextPreference
+            android:defaultValue="admin"
+            android:dependency="EnableMongoUpload"
+            android:dialogTitle="Enter MongoDB Database"
+            android:key="MongoDB Database"
+            android:title="MongoDB Database"></EditTextPreference>
+
         <com.nightscout.android.utils.CustomSwitchPreference
             android:defaultValue="false"
             android:disableDependentsState="false"

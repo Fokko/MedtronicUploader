@@ -28,14 +28,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.mongodb.DB;
 import com.mongodb.DBCollection;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientOptions.Builder;
-import com.mongodb.MongoClientURI;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
 import com.nightscout.android.USB.HexDump;
 import com.nightscout.android.USB.USBPower;
 import com.nightscout.android.upload.Record;
@@ -770,8 +763,6 @@ public class MedtronicCGMService extends Service implements
         }
     }
 
-    ;
-
     /**
      * Sends message to the UI to indicate that the device is disconnected.
      */
@@ -1031,17 +1022,13 @@ public class MedtronicCGMService extends Service implements
                         try {
                             Thread.sleep(2500);
                         } catch (InterruptedException e) {
-                            Log.e(TAG,
-                                    "Sleep after setWifiEnabled(false) interrupted",
-                                    e);
+                            Log.e(TAG, "Sleep after setWifiEnabled(false) interrupted: " + ExceptionUtils.getStackTrace(e));
                         }
                         wifiManager.setWifiEnabled(true);
                         try {
                             Thread.sleep(2500);
                         } catch (InterruptedException e) {
-                            Log.e(TAG,
-                                    "Sleep after setWifiEnabled(true) interrupted",
-                                    e);
+                            Log.e(TAG, "Sleep after setWifiEnabled(true) interrupted: " + ExceptionUtils.getStackTrace(e));
                         }
                     }
                 }
@@ -1096,38 +1083,37 @@ public class MedtronicCGMService extends Service implements
 
     private void openUsbSerial() {
         if (mSerial == null) {
-            Toast.makeText(this, "cannot open", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        synchronized (mSerial) {
-            if (!mSerial.isOpened()) {
-                if (!mSerial.open()) {
-                    USBPower.PowerOff();
-                    try {
-                        Thread.sleep(2500);
-                    } catch (InterruptedException e) {
-                        Log.w(TAG, "Interrupted during sleep after Power On", e);
+            Toast.makeText(this, "Cannot open connection to USB", Toast.LENGTH_SHORT).show();
+        } else {
+            synchronized (mSerial) {
+                if (!mSerial.isOpened()) {
+                    if (!mSerial.open()) {
+                        USBPower.PowerOff();
+                        try {
+                            Thread.sleep(2500);
+                        } catch (InterruptedException e) {
+                            Log.w(TAG, "Interrupted during sleep after Power On", e);
+                        }
+                        USBPower.PowerOn();
+                        try {
+                            Thread.sleep(2500);
+                        } catch (InterruptedException e) {
+                            Log.w(TAG, "Interrupted during sleep after Power On", e);
+                        }
+                        Toast.makeText(this, "cannot open", Toast.LENGTH_SHORT)
+                                .show();
+                        return;
+                    } else {
+                        boolean dtrOn = true;
+                        boolean rtsOn = false;
+                        mSerial.setConfig(new UartConfig(57600, 8, 1, 0, dtrOn,
+                                rtsOn));
+                        Toast.makeText(this, "connected", Toast.LENGTH_SHORT)
+                                .show();
                     }
-                    USBPower.PowerOn();
-                    try {
-                        Thread.sleep(2500);
-                    } catch (InterruptedException e) {
-                        Log.w(TAG, "Interrupted during sleep after Power On", e);
-                    }
-                    Toast.makeText(this, "cannot open", Toast.LENGTH_SHORT)
-                            .show();
-                    return;
-                } else {
-                    boolean dtrOn = true;
-                    boolean rtsOn = false;
-                    mSerial.setConfig(new UartConfig(57600, 8, 1, 0, dtrOn,
-                            rtsOn));
-                    Toast.makeText(this, "connected", Toast.LENGTH_SHORT)
-                            .show();
                 }
             }
         }
-
     }
 
     private void closeUsbSerial() {
@@ -1451,13 +1437,7 @@ public class MedtronicCGMService extends Service implements
             }
 
         } catch (Exception e) {
-            StringBuffer sb1 = new StringBuffer("");
-            sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
-            for (StackTraceElement st : e.getStackTrace()) {
-                sb1.append(st.toString()).append("\n");
-                ;
-            }
-            sendMessageToUI(sb1.toString(), false);
+            sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
         }
     }
 
@@ -1587,8 +1567,9 @@ public class MedtronicCGMService extends Service implements
             if (auxSize >= 0) {
                 log.info("Quiero leer " + auxSize + " bytes");
                 doReadAndUpload(auxSize);
-            } else
+            } else {
                 log.info("ReadByListener NO TIENE NADA QUE SUBIR");
+            }
         }
     }
 
@@ -1646,7 +1627,6 @@ public class MedtronicCGMService extends Service implements
                         medtronicReader.lastMedtronicPumpRecord = null;
                     }
 
-
                     Record[] params = new Record[listToUpload.size()];
                     for (int i = listToUpload.size() - 1; i >= 0; i--) {
                         Record record = listToUpload.get(i);
@@ -1658,7 +1638,6 @@ public class MedtronicCGMService extends Service implements
                             uploader.execute(params);
                         }
                     }
-
 
                     listToUpload.clear();
                     if (prefs.getBoolean("EnableWifiHack", false)) {

@@ -11,14 +11,8 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import com.mongodb.Mongo;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.WriteConcern;
+import com.mongodb.MongoException;
 import com.nightscout.android.MongoConnection;
 import com.nightscout.android.medtronic.MedtronicActivity;
 import com.nightscout.android.medtronic.MedtronicConstants;
@@ -36,19 +30,15 @@ import org.apache.http.params.HttpParams;
 import org.fusesource.mqtt.client.FutureConnection;
 import org.fusesource.mqtt.client.MQTT;
 import org.fusesource.mqtt.client.QoS;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 import java.security.MessageDigest;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 
 import ch.qos.logback.classic.Logger;
@@ -117,10 +107,13 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this.context);
         Boolean enableRESTUpload = prefs.getBoolean("EnableRESTUpload", false);
+        Boolean enableMQTTUpload = prefs.getBoolean("EnableMQTTUpload", false);
         Boolean enableMongoUpload = prefs.getBoolean("EnableMongoUpload", false);
+
         try {
+
             long start = System.currentTimeMillis();
-            if (enableRESTUpload) {
+            if (enableMQTTUpload) {
                 Log.i(TAG, String.format("Starting upload of %s record using MQTT", records.length));
                 log.info(String.format("Starting upload of %s record using MQTT", records.length));
                 doMQTTUpload(prefs, records);
@@ -139,8 +132,13 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                 Log.i(TAG, String.format("Finished upload of %s record using a Mongo in %s ms", records.length, System.currentTimeMillis() - start));
                 log.info(String.format("Finished upload of %s record using a Mongo in %s ms", records.length, System.currentTimeMillis() - start));
             }
+
+        } catch (MongoException e){
+            Log.e(TAG, "Mongo-related error: " + ExceptionUtils.getStackTrace(e));
+            log.error("Mongo-related error: " + ExceptionUtils.getStackTrace(e));
         } catch (Exception e) {
-            log.error("Error uploading: " + ExceptionUtils.getStackTrace(e));
+            Log.e(TAG, "Unable to upload record: " + ExceptionUtils.getStackTrace(e));
+            log.error("Unable to upload record: " + ExceptionUtils.getStackTrace(e));
         }
 
 
@@ -166,16 +164,13 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
             for (Record record : records) {
 
-                final int typeSaved;
                 final String topic;
                 if (record instanceof GlucometerRecord) {
-                    typeSaved = 2;
+
                     topic = "/downloads/protobuf";
                 } else if (record instanceof MedtronicPumpRecord) {
-                    typeSaved = 3;
                     topic = "/downloads/protobuf";
                 } else {
-                    typeSaved = 0;
                     topic = "/downloads/protobuf";
                 }
 
@@ -243,8 +238,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void doRESTUploadTo(String baseURI, Record[] records) {
-        Integer typeSaved = null;
-        // TODO: Only version 1
+
         try {
             int apiVersion = 0;
             if (baseURI.endsWith("/v1/")) apiVersion = 1;
@@ -272,13 +266,11 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
             for (Record record : records) {
                 String postURL = baseURL;
                 if (record instanceof GlucometerRecord) {
-                    typeSaved = 2;
                     postURL += "gdentries";
                 } else if (record instanceof MedtronicPumpRecord) {
-                    typeSaved = 3;
                     postURL += "deviceentries";
                 } else {
-                    typeSaved = 0;
+
                     postURL += "entries";
                 }
                 Log.i(TAG, "postURL: " + postURL);
@@ -389,206 +381,129 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
 
     private void doMongoUpload(SharedPreferences prefs, Record[] records) {
-        Integer typeSaved = null;
-        boolean recordsTry = false;
 
-
+        Log.i(TAG, "The number of Records being sent to MongoDB is " + records.length);
+        log.info("The number of Records being sent to MongoDB is " + records.length);
+        Boolean isWarmingUp = false;
+        for (Record oRecord : records) {
             try {
+                BasicDBObject testData = new BasicDBObject();
+                Date date = DATE_FORMAT.parse(oRecord.displayTime);
+                testData.put("date", date.getTime());
+                testData.put("dateString", oRecord.displayTime);
 
-                Log.i(TAG, "The number of Records being sent to MongoDB is " + records.length);
-                log.info("The number of Records being sent to MongoDB is " + records.length);
-                Boolean isWarmingUp = false;
-                for (Record oRecord : records) {
-                    recordsTry = true;
-                    try {
-                        BasicDBObject testData = new BasicDBObject();
-                        Date date = DATE_FORMAT.parse(oRecord.displayTime);
-                        testData.put("date", date.getTime());
-                        testData.put("dateString", oRecord.displayTime);
-                        if (oRecord instanceof MedtronicSensorRecord) {
-                            Record record = oRecord;
-                            // make db object
-                            testData.put("device", DEVICE_NAME);
-                            testData.put("sgv", record.bGValue);
-                            testData.put("type", "sgv");
-                            testData.put("direction", record.trend);
-                            typeSaved = 0;
-                            if (oRecord instanceof MedtronicSensorRecord) {
-                                typeSaved = 1;
-                                testData.put("isig", ((MedtronicSensorRecord) record).isig);
-                                testData.put("calibrationFactor", ((MedtronicSensorRecord) record).calibrationFactor);
-                                testData.put("calibrationStatus", ((MedtronicSensorRecord) record).calibrationStatus);
-                                testData.put("unfilteredGlucose", ((MedtronicSensorRecord) record).unfilteredGlucose);
-                                testData.put("isCalibrating", ((MedtronicSensorRecord) record).isCalibrating);
-                                log.info("Testing isCheckedWUP -->", prefs.getBoolean("isCheckedWUP", false));
-                                if (!prefs.getBoolean("isCheckedWUP", false)) {
-                                    log.info("Testing isCheckedWUP -->GET INTO");
-                                    MedtronicPumpRecord pumpRecord = new MedtronicPumpRecord();
+                if (oRecord instanceof MedtronicSensorRecord) {
+                    MedtronicSensorRecord record = (MedtronicSensorRecord) oRecord;
+                    // make db object
+                    testData.put("device", DEVICE_NAME);
+                    testData.put("sgv", record.bGValue);
+                    testData.put("type", "sgv");
+                    testData.put("direction", record.trend);
 
+                    testData.put("isig", record.isig);
+                    testData.put("calibrationFactor", record.calibrationFactor);
+                    testData.put("calibrationStatus", record.calibrationStatus);
+                    testData.put("unfilteredGlucose", record.unfilteredGlucose);
+                    testData.put("isCalibrating", record.isCalibrating);
+                    log.info("Testing isCheckedWUP -->", prefs.getBoolean("isCheckedWUP", false));
+                    if (!prefs.getBoolean("isCheckedWUP", false)) {
+                        log.info("Testing isCheckedWUP -->GET INTO");
+                        HashMap<String, Object> filter = new HashMap<String, Object>();
+                        filter.put("deviceId", prefs.getString("medtronic_cgm_id", ""));
 
-                                    HashMap<String, Object> filter = new HashMap<String, Object>();
-                                    filter.put("deviceId", prefs.getString("medtronic_cgm_id", ""));
-                                    cursor = deviceData.find(new BasicDBObject(filter));
+                        DBObject previousRecord = MongoConnection.getInstance(prefs).getDevice(filter);
 
-                                    if (cursor.hasNext()) {
-                                        DBObject previousRecord = cursor.next();
-                                        previousRecord.put("date", testData.get("date"));
-                                        previousRecord.put("dateString", testData.get("dateString"));
-                                        JSONObject job = new JSONObject(previousRecord.toMap());
-                                        isWarmingUp = job.getBoolean("isWarmingUp");
-                                        log.info("Testing isCheckedWUP -->NEXT -->ISWUP?? " + isWarmingUp);
-                                        if (isWarmingUp) {
-                                            pumpRecord.mergeCurrentWithDBObject(previousRecord);
-                                            log.info("Uploading a DeviceRecord");
+                        if (previousRecord != null) {
+                            previousRecord.put("date", testData.get("date"));
+                            previousRecord.put("dateString", testData.get("dateString"));
+                            JSONObject job = new JSONObject(previousRecord.toMap());
+                            isWarmingUp = job.getBoolean("isWarmingUp");
+                            log.info("Testing isCheckedWUP -->NEXT -->ISWUP?? " + isWarmingUp);
 
-                                            MongoConnection.getInstance().writeDeviceCollection(previousRecord);
-
-                                            prefs.edit().putBoolean("isCheckedWUP", true).commit();
-                                        }
-                                    }
-                                }
-                            }
-                            log.info("Uploading a  Record");
-
-                            MongoConnection.getInstance().writeEntriesCollection(testData);
-                        } else if (oRecord instanceof GlucometerRecord) {
-                            typeSaved = 2;
-                            GlucometerRecord gdRecord = (GlucometerRecord) oRecord;
-
-                            testData.put("device", DEVICE_NAME);
-                            testData.put("mbg", gdRecord.numGlucometerValue);
-                            log.info("Uploading a Glucometer Record!");
-
-                            MongoConnection.getInstance().writeGlucoseCollection(testData);
-                        } else if (oRecord instanceof MedtronicPumpRecord) {
-                            typeSaved = 3;
-                            MedtronicPumpRecord pumpRecord = (MedtronicPumpRecord) oRecord;
-                            HashMap<String, Object> filter = new HashMap<String, Object>();
-                            filter.put("deviceId", pumpRecord.deviceId);
-                            cursor = deviceData.find(new BasicDBObject(filter));
-                            if (cursor.hasNext()) {
-                                DBObject previousRecord = cursor.next();
-                                previousRecord.put("date", testData.get("date"));
-                                previousRecord.put("dateString", testData.get("dateString"));
-                                isWarmingUp = pumpRecord.isWarmingUp;
-                                pumpRecord.mergeCurrentWithDBObject(previousRecord);
-                                log.info("Uploading a DeviceRecord");
-                                deviceData.save(previousRecord, WriteConcern.ACKNOWLEDGED);
-                            } else {
-                                testData.put("name", pumpRecord.getDeviceName());
-                                testData.put("deviceId", pumpRecord.deviceId);
-                                testData.put("insulinLeft", pumpRecord.insulinLeft);
-                                testData.put("alarm", pumpRecord.alarm);
-                                testData.put("status", pumpRecord.status);
-                                testData.put("temporaryBasal", pumpRecord.temporaryBasal);
-                                testData.put("batteryStatus", pumpRecord.batteryStatus);
-                                testData.put("batteryVoltage", pumpRecord.batteryVoltage);
-                                isWarmingUp = pumpRecord.isWarmingUp;
-                                testData.put("isWarmingUp", pumpRecord.isWarmingUp);
-                                log.info("Uploading a DeviceRecord");
-
-                                MongoConnection.getInstance().writeDeviceCollection(testData);
-
-                            }
-                        }
-                        typeSaved = null;
-                    } catch (IllegalArgumentException e) {
-                        Log.e("UploaderHelper", "Illegal record: " + ExceptionUtils.getStackTrace(e));
-
-                    } catch (Exception e) {
-                        if ((typeSaved != null && (typeSaved == 0 || typeSaved == 1))) {//Only EGV records are important enough.
                             if (isWarmingUp) {
-                                prefs.edit().putBoolean("isCheckedWUP", false);
+                                log.info("Uploading a DeviceRecord");
+                                MongoConnection.getInstance(prefs).writeDeviceCollection(previousRecord);
+                                prefs.edit().putBoolean("isCheckedWUP", true).commit();
                             }
-                            log.warn("Added to records not uploaded");
-                        } else if (typeSaved == 3) {
-                            prefs.edit().putBoolean("isWarmingUp", isWarmingUp);
-                        }
-                        Log.w(TAG, "Unable to upload data to mongo in loop " + ExceptionUtils.getStackTrace(e));
-                        log.warn("Unable to upload data to mongo in loop" + ExceptionUtils.getStackTrace(e));
-                    }
-                }
-            } catch (Exception e) {
-                if (!recordsTry) {
-                    for (Record oRecord : records) {
-                        BasicDBObject testData = new BasicDBObject();
-                        Date date;
-                        try {
-                            date = DATE_FORMAT.parse(oRecord.displayTime);
-                        } catch (ParseException e1) {
-                            date = new Date();
-
-                            Log.e(TAG, "Strange data-format: " + ExceptionUtils.getStackTrace(e));
-                            log.error("Strange data-format: " + ExceptionUtils.getStackTrace(e));
-                        }
-                        testData.put("date", date.getTime());
-                        testData.put("dateString", oRecord.displayTime);
-                        typeSaved = null;
-                        if (oRecord instanceof Record) {
-                            Record record = (Record) oRecord;
-                            // make db object
-                            testData.put("device", DEVICE_NAME);
-                            testData.put("sgv", record.bGValue);
-                            testData.put("direction", record.trend);
-                            typeSaved = 0;
-                            if (oRecord instanceof MedtronicSensorRecord) {
-                                typeSaved = 1;
-                                testData.put("isig", ((MedtronicSensorRecord) record).isig);
-                                testData.put("calibrationFactor", ((MedtronicSensorRecord) record).calibrationFactor);
-                                testData.put("calibrationStatus", ((MedtronicSensorRecord) record).calibrationStatus);
-                                testData.put("unfilteredGlucose", ((MedtronicSensorRecord) record).unfilteredGlucose);
-                                testData.put("isCalibrating", ((MedtronicSensorRecord) record).isCalibrating);
-                            }
-                        }
-                        if ((typeSaved != null && (typeSaved == 0 || typeSaved == 1))) {//Only EGV records are important enough.
-                            log.warn("Added to records not uploaded: " + ExceptionUtils.getStackTrace(e));
                         }
                     }
-                }
-                Log.e(TAG, "Unable to upload data to mongo: " + ExceptionUtils.getStackTrace(e));
-                log.error("Unable to upload data to mongo: " + ExceptionUtils.getStackTrace(e));
-                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
-            }
-            try {
+                    log.info("Uploading a  Record");
 
-                    //Uploading devicestatus
-                    boolean update = true;
-                    if (prefs.contains("lastBatteryUpdated")) {
-                        long lastTimeUpdated = prefs.getLong("lastBatteryUpdated", 0);
-                        if (lastTimeUpdated > 0) {
-                            long current = System.currentTimeMillis();
-                            long diff = current - lastTimeUpdated;
-                            if (diff < MedtronicConstants.TIME_5_MIN_IN_MS)
-                                update = false;
-                            else {
-                                SharedPreferences.Editor editor = prefs.edit();
-                                editor.putLong("lastBatteryUpdated", current);
-                                editor.commit();
-                            }
-                        } else {
-                            SharedPreferences.Editor editor = prefs.edit();
-                            editor.putLong("lastBatteryUpdated", System.currentTimeMillis());
-                            editor.commit();
-                        }
+                    MongoConnection.getInstance(prefs).writeEntriesCollection(testData);
+                } else if (oRecord instanceof GlucometerRecord) {
+                    GlucometerRecord gdRecord = (GlucometerRecord) oRecord;
+
+                    testData.put("device", DEVICE_NAME);
+                    testData.put("mbg", gdRecord.numGlucometerValue);
+                    log.info("Uploading a Glucometer Record!");
+
+                    MongoConnection.getInstance(prefs).writeGlucoseCollection(testData);
+                } else if (oRecord instanceof MedtronicPumpRecord) {
+                    MedtronicPumpRecord pumpRecord = (MedtronicPumpRecord) oRecord;
+                    HashMap<String, Object> filter = new HashMap<String, Object>();
+                    filter.put("deviceId", pumpRecord.deviceId);
+
+                    DBObject previousRecord = MongoConnection.getInstance(prefs).getDevice(filter);
+
+                    if (previousRecord == null) {
+                        previousRecord.put("date", testData.get("date"));
+                        previousRecord.put("dateString", testData.get("dateString"));
+                        pumpRecord.mergeCurrentWithDBObject(previousRecord);
+                        log.info("Uploading a DeviceRecord");
+                        MongoConnection.getInstance(prefs).writeDeviceCollection(previousRecord);
                     } else {
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putLong("lastBatteryUpdated", System.currentTimeMillis());
-                        editor.commit();
-                    }
-                    if (update) {
-                        BasicDBObject devicestatus = new BasicDBObject();
-                        devicestatus.put("uploaderBattery", MedtronicActivity.batLevel);
-                        devicestatus.put("created_at", new Date());
-                        log.debug("Update Battery");
+                        testData.put("name", pumpRecord.getDeviceName());
+                        testData.put("deviceId", pumpRecord.deviceId);
+                        testData.put("insulinLeft", pumpRecord.insulinLeft);
+                        testData.put("alarm", pumpRecord.alarm);
+                        testData.put("status", pumpRecord.status);
+                        testData.put("temporaryBasal", pumpRecord.temporaryBasal);
+                        testData.put("batteryStatus", pumpRecord.batteryStatus);
+                        testData.put("batteryVoltage", pumpRecord.batteryVoltage);
+                        testData.put("isWarmingUp", pumpRecord.isWarmingUp);
+                        log.info("Uploading a DeviceRecord");
 
-                        MongoConnection.getInstance().writeDeviceStatusCollection(devicestatus);
-                    }
+                        MongoConnection.getInstance(prefs).writeDeviceCollection(testData);
 
+                    }
+                }
             } catch (Exception e) {
-                Log.e(TAG, "Unable to upload battery data to mongo: " + ExceptionUtils.getStackTrace(e));
-                log.error("Unable to upload battery data to mongo: " + ExceptionUtils.getStackTrace(e));
-
-                sendMessageToUI(ExceptionUtils.getStackTrace(e), false);
+                Log.w(TAG, "Unable to upload data to mongo in loop " + ExceptionUtils.getStackTrace(e));
+                log.warn("Unable to upload data to mongo in loop" + ExceptionUtils.getStackTrace(e));
             }
+        }
+
+        //Uploading devicestatus
+        boolean update = true;
+        if (prefs.contains("lastBatteryUpdated")) {
+            long lastTimeUpdated = prefs.getLong("lastBatteryUpdated", 0);
+            if (lastTimeUpdated > 0) {
+                long current = System.currentTimeMillis();
+                long diff = current - lastTimeUpdated;
+                if (diff < MedtronicConstants.TIME_5_MIN_IN_MS)
+                    update = false;
+                else {
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putLong("lastBatteryUpdated", current);
+                    editor.commit();
+                }
+            } else {
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putLong("lastBatteryUpdated", System.currentTimeMillis());
+                editor.commit();
+            }
+        } else {
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putLong("lastBatteryUpdated", System.currentTimeMillis());
+            editor.commit();
+        }
+        if (update) {
+            BasicDBObject devicestatus = new BasicDBObject();
+            devicestatus.put("uploaderBattery", MedtronicActivity.batLevel);
+            devicestatus.put("created_at", new Date());
+            log.debug("Update Battery");
+
+            MongoConnection.getInstance(prefs).writeDeviceStatusCollection(devicestatus);
+        }
     }
 }
